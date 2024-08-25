@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::dsa::char_tree::Tree;
 use crate::server::commands::ServerCommand;
@@ -15,11 +15,13 @@ fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
     (command, path, value)
 }
 
-
-pub async fn handle_request(tree: &Arc<Mutex<Tree>>, request: &str) -> ResponseStatus {
-    let (command, path, value) = parse_request(request);
-
-    let mut tree = tree.lock().unwrap(); // Acquire lock for safe mutable access
+fn execute(
+    mut tree: MutexGuard<Tree>,
+    command: ServerCommand, 
+    path: &str, 
+    value: Option<&str>, 
+    request: &str
+) -> ResponseStatus {
     match command {
         ServerCommand::Insert => {
             if let Some(v) = value {
@@ -48,5 +50,15 @@ pub async fn handle_request(tree: &Arc<Mutex<Tree>>, request: &str) -> ResponseS
             ResponseStatus::Ok(format!("deleted: {}", path))
         },
         _ => ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(SyntaxErrType::UnknownCommand(request.to_string())))),
+    }
+}
+
+
+pub async fn handle_request(tree: &Arc<Mutex<Tree>>, request: &str) -> ResponseStatus {
+    let (command, path, value) = parse_request(request);
+    let tree = tree.lock();
+    match tree {
+        Ok(tree) => execute(tree, command, path, value, request),
+        Err(e) => ResponseStatus::Error(ServerError::DataBaseError(e.to_string())),
     }
 }

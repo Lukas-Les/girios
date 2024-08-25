@@ -12,8 +12,8 @@ async fn main() -> tokio::io::Result<()> {
     let tree = Arc::new(Mutex::new(Tree::new()));
 
     // Start listening for incoming TCP connections
-    let listener = TcpListener::bind("127.0.0.1:8080").await?;
-    println!("Server running on localhost:8080");
+    let listener = TcpListener::bind("127.0.0.1:42069").await?;
+    println!("Server running on localhost:42069");
 
     loop {
         let (mut socket, _) = listener.accept().await?;

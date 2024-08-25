@@ -25,12 +25,14 @@ impl fmt::Display for RequestErrorType {
 
 pub enum ServerError {
     RequestError(RequestErrorType),
+    DataBaseError(String),
 }
 
 impl fmt::Display for ServerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ServerError::RequestError(e) => write!(f, "{}", e),
+            ServerError::DataBaseError(e) => write!(f, "{}", e),
         }
     }
 }
