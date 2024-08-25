@@ -6,20 +6,10 @@ use crate::server::commands::ServerCommand;
 
 fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
     let mut parts = request.split_whitespace();
-    let command_str = parts.next().unwrap_or("");
+    let command = ServerCommand::from(parts.next().unwrap_or(""));
     let path = parts.next().unwrap_or("");
     let value = parts.next();
 
-    // TODO: implement From trait for ServerCommand;
-    let command = match command_str {
-        "delete" => ServerCommand::Delete,
-        "DELETE" => ServerCommand::Delete,
-        "get" => ServerCommand::Get,
-        "GET" => ServerCommand::Get,
-        "insert" => ServerCommand::Insert,
-        "INSERT" => ServerCommand::Insert,
-        _ => ServerCommand::Nop,
-    };
     (command, path, value)
 }
 
