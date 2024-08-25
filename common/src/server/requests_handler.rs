@@ -16,7 +16,7 @@ fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
         "DELETE" => ServerCommand::Delete,
         "get" => ServerCommand::Get,
         "GET" => ServerCommand::Get,
-        "isert" => ServerCommand::Insert,
+        "insert" => ServerCommand::Insert,
         "INSERT" => ServerCommand::Insert,
         _ => ServerCommand::Nop,
     };

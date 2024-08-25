@@ -32,6 +32,7 @@ async fn main() -> tokio::io::Result<()> {
                 };
 
                 let request = String::from_utf8_lossy(&buffer[..n]);
+                println!("request: {}", &request);
                 let response = handle_request(&tree, &request).await;
 
                 // Write the response back to the socket
