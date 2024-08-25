@@ -2,19 +2,17 @@
 //! Example:
 //! ```
 //! use common::dsa::char_tree::Tree;
-//! 
+//!
 //! let mut tree = Tree::new();
 //! tree.insert("mypath", "somevalue");
 //! let result = tree.get("mypath").unwrap();
 //! let other_result = tree.hit("mypathbutlonger").unwrap();
-//! 
+//!
 //! assert_eq!(result, "somevalue");
 //! assert_eq!(other_result, "somevalue");
 //! tree.deep_delete("mypath");
 //! assert_eq!(tree.get("mypath"), None);
 //! ```
-
-
 
 #[derive(Debug)]
 struct Node {
@@ -42,7 +40,6 @@ impl Node {
     }
 }
 
-
 /// The Tree struct allows you to store &str values on a provided char path;
 /// Use insert(path: &str, value: &str) to insert value and
 /// get(path: &str) to retireve it.
@@ -57,7 +54,11 @@ impl Tree {
 
     fn consume_path(path: &mut &str) -> char {
         let first_char = path.chars().next().unwrap(); // Get the first character
-        let next_char_index = path.char_indices().nth(1).map(|(i, _)| i).unwrap_or(path.len()); // Find the index of the next character boundary
+        let next_char_index = path
+            .char_indices()
+            .nth(1)
+            .map(|(i, _)| i)
+            .unwrap_or(path.len()); // Find the index of the next character boundary
         *path = &path[next_char_index..]; // Update the path to exclude the consumed character
         first_char // Return the first character
     }
@@ -141,15 +142,19 @@ impl Tree {
             return;
         }
         let first_char = Self::consume_path(&mut path);
-        let mut current_node = match self.root.iter_mut().find(|n| n.name == first_char){
+        let mut current_node = match self.root.iter_mut().find(|n| n.name == first_char) {
             Some(node) => node,
-            None => {return;},
+            None => {
+                return;
+            }
         };
         while !path.is_empty() {
             let first_char = Self::consume_path(&mut path);
-            current_node = match current_node.get_child_mut(first_char){
+            current_node = match current_node.get_child_mut(first_char) {
                 Some(node) => node,
-                None => {return;},
+                None => {
+                    return;
+                }
             };
         }
         current_node.value = None;
@@ -173,13 +178,17 @@ impl Tree {
             return node.children.is_empty();
         }
         let first_char = Self::consume_path(&mut path);
-        if let Some(next) = node.get_child_mut(first_char) {      
+        if let Some(next) = node.get_child_mut(first_char) {
             if Self::deep_delete_recursive(next, path) {
                 // If the child node is no longer needed (returned true), remove it
-                let pos = node.children.iter().position(|n| n.name == first_char).unwrap();
+                let pos = node
+                    .children
+                    .iter()
+                    .position(|n| n.name == first_char)
+                    .unwrap();
                 node.children.remove(pos);
             }
-            
+
             // If node has no value and no children, it can be deleted
             return node.value.is_none() && node.children.is_empty();
         }
@@ -187,7 +196,6 @@ impl Tree {
         false // Node with the specified path was not found
     }
 }
-
 
 mod tests {
     use super::*;
@@ -216,7 +224,7 @@ mod tests {
         let mut tree = Tree::new();
         tree.insert("foo", "bar");
         tree.insert("123", "123");
-        
+
         assert_eq!(tree.hit("123456").unwrap(), "123".to_string());
         assert_eq!(tree.hit("foobar").unwrap(), "bar".to_string());
     }

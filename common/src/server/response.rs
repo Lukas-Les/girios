@@ -2,13 +2,11 @@ use std::fmt;
 
 use crate::server::errors::ServerError;
 
-
 pub enum ResponseStatus {
     Ok(String),
     NoData(String),
     Error(ServerError),
 }
-
 
 impl fmt::Display for ResponseStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

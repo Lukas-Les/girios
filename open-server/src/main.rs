@@ -5,7 +5,6 @@ use tokio::net::TcpListener;
 use common::dsa::char_tree::Tree;
 use common::server::requests_handler::handle_request;
 
-
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
     // Create a shared, thread-safe instance of Tree
