@@ -55,13 +55,19 @@ impl Tree {
         Tree { root: Vec::new() }
     }
 
+    fn consume_path(path: &mut &str) -> char {
+        let first_char = path.chars().next().unwrap(); // Get the first character
+        let next_char_index = path.char_indices().nth(1).map(|(i, _)| i).unwrap_or(path.len()); // Find the index of the next character boundary
+        *path = &path[next_char_index..]; // Update the path to exclude the consumed character
+        first_char // Return the first character
+    }
+
     fn insert_recursive(mut path: &str, value: &str, mut current_node: &mut Box<Node>) {
         if path.is_empty() {
             current_node.value = Some(value.to_string());
             return;
         }
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        let first_char = Self::consume_path(&mut path);
         if let Some(child) = current_node.get_child_mut(first_char) {
             Self::insert_recursive(path, value, child)
         } else {
@@ -75,9 +81,8 @@ impl Tree {
         if path.is_empty() {
             return;
         }
-
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        println!("inserting to the path: {}", path);
+        let first_char = Self::consume_path(&mut path);
         if self.root.is_empty() {
             let new_node = Box::new(Node::new(first_char));
             self.root.push(new_node);
@@ -99,12 +104,10 @@ impl Tree {
         if self.root.is_empty() || path.is_empty() {
             return None;
         }
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        let first_char = Self::consume_path(&mut path);
         let mut current_node = self.root.iter().find(|&n| n.name == first_char)?;
         while !path.is_empty() {
-            let first_char = path.chars().next().unwrap();
-            path = &path[1..];
+            let first_char = Self::consume_path(&mut path);
             if let Some(child) = current_node.get_child_ref(first_char) {
                 current_node = child;
             } else {
@@ -119,12 +122,10 @@ impl Tree {
         if self.root.is_empty() || path.is_empty() {
             return None;
         }
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        let first_char = Self::consume_path(&mut path);
         let mut current_node = self.root.iter().find(|&n| n.name == first_char)?;
         while !path.is_empty() {
-            let first_char = path.chars().next().unwrap();
-            path = &path[1..];
+            let first_char = Self::consume_path(&mut path);
             if let Some(child) = current_node.get_child_ref(first_char) {
                 current_node = child;
             } else {
@@ -139,15 +140,13 @@ impl Tree {
         if self.root.is_empty() || path.is_empty() {
             return;
         }
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        let first_char = Self::consume_path(&mut path);
         let mut current_node = match self.root.iter_mut().find(|n| n.name == first_char){
             Some(node) => node,
             None => {return;},
         };
         while !path.is_empty() {
-            let first_char = path.chars().next().unwrap();
-            path = &path[1..];
+            let first_char = Self::consume_path(&mut path);
             current_node = match current_node.get_child_mut(first_char){
                 Some(node) => node,
                 None => {return;},
@@ -162,8 +161,7 @@ impl Tree {
             return;
         }
         // Start deletion from the root nodes
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
+        let first_char = Self::consume_path(&mut path);
         if let Some(node) = self.root.iter_mut().find(|n| n.name == first_char) {
             Self::deep_delete_recursive(node, path);
         }
@@ -174,10 +172,7 @@ impl Tree {
             node.value = None;
             return node.children.is_empty();
         }
-
-        let first_char = path.chars().next().unwrap();
-        path = &path[1..];
-
+        let first_char = Self::consume_path(&mut path);
         if let Some(next) = node.get_child_mut(first_char) {      
             if Self::deep_delete_recursive(next, path) {
                 // If the child node is no longer needed (returned true), remove it
@@ -220,6 +215,9 @@ mod tests {
     fn test_insert_and_hit() {
         let mut tree = Tree::new();
         tree.insert("foo", "bar");
+        tree.insert("123", "123");
+        
+        assert_eq!(tree.hit("123456").unwrap(), "123".to_string());
         assert_eq!(tree.hit("foobar").unwrap(), "bar".to_string());
     }
 
@@ -251,5 +249,12 @@ mod tests {
         assert_eq!(tree.get("abcde"), None);
         assert_eq!(tree.get("aba").unwrap(), "ABA".to_string());
         assert_eq!(tree.get("edc").unwrap(), "EDC".to_string());
+    }
+
+    #[test]
+    fn test_insert_various_chars() {
+        let mut tree = Tree::new();
+        tree.insert("ŠšŠ", "ŪūŪ");
+        assert_eq!(tree.get("ŠšŠ").unwrap(), "ŪūŪ".to_string());
     }
 }

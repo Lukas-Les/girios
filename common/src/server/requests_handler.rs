@@ -25,6 +25,7 @@ fn execute(
     match command {
         ServerCommand::Insert => {
             if let Some(v) = value {
+                println!("inserting value: {}", v);
                 tree.insert(path, v);
                 ResponseStatus::Ok(format!("{} -> {}", v, path))
             } else {
