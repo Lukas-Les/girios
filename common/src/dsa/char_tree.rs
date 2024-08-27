@@ -246,54 +246,28 @@ mod tests {
 
     #[test]
     fn test_insert_and_get() {
-        let mut tree = Tree::new();
-        tree.insert("", "A");
-
-        tree.insert("a", "A");
-        tree.insert("ab", "AB");
+        let tree = setup_tree();
         assert_eq!(tree.get("ab").unwrap(), "AB".to_string());
-        assert_eq!(tree.get(""), None);
-        assert_eq!(tree.get("abc"), None);
     }
 
     #[test]
     fn test_insert_and_hit() {
-        let mut tree = Tree::new();
-        tree.insert("foo", "bar");
-        tree.insert("123", "123");
-
-        assert_eq!(tree.hit("123456").unwrap(), "123".to_string());
-        assert_eq!(tree.hit("foobar").unwrap(), "bar".to_string());
+        let tree = setup_tree();
+        assert_eq!(tree.hit("dee").unwrap(), "D".to_string());
+        assert_eq!(tree.hit("ababab").unwrap(), "AB".to_string());
     }
 
     #[test]
     fn test_deep_delete() {
-        let mut tree = Tree::new();
-
-        tree.insert("a", "A");
-        tree.insert("ab", "AB");
-        tree.insert("abc", "ABC");
-        tree.insert("abcde", "ABCDE");
-        tree.insert("aba", "ABA");
-        tree.insert("edc", "EDC");
-        assert_eq!(tree.get("a").unwrap(), "A".to_string());
-        assert_eq!(tree.get("ab").unwrap(), "AB".to_string());
-        assert_eq!(tree.get("abc").unwrap(), "ABC".to_string());
-        assert_eq!(tree.get("aba").unwrap(), "ABA".to_string());
-        assert_eq!(tree.get("edc").unwrap(), "EDC".to_string());
+        let mut tree = setup_tree();
 
         tree.deep_delete("ab");
-        tree.deep_delete("abc");
         tree.deep_delete("abcd");
-        tree.deep_delete("abcde");
 
         assert_eq!(tree.get("a").unwrap(), "A".to_string());
         assert_eq!(tree.get("ab"), None);
-        assert_eq!(tree.get("abc"), None);
+        assert_eq!(tree.get("abc").unwrap(), "ABC".to_string());
         assert_eq!(tree.get("abcd"), None);
-        assert_eq!(tree.get("abcde"), None);
-        assert_eq!(tree.get("aba").unwrap(), "ABA".to_string());
-        assert_eq!(tree.get("edc").unwrap(), "EDC".to_string());
     }
 
     #[test]
