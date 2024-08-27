@@ -195,10 +195,43 @@ impl Tree {
 
         false // Node with the specified path was not found
     }
+
+    fn scan_recursive<'a>(node: &'a Box<Node>, mut path: String, result: &mut Vec<(String, &'a String)>) {
+        path.push(node.name.clone());
+        if let Some(value) = &node.value {
+            result.push((path.clone(), value));
+        }
+        for child in node.children.iter() {
+            Self::scan_recursive(child, path.clone(), result)
+        }
+    }
+
+    /// This function returns all possible keys and all possible values inserted.
+    pub fn scan<'a>(&'a self) -> Vec<(String, &'a String)>{
+        let mut result: Vec<(String, &'a String)> = Vec::new();
+        for node in self.root.iter() {
+                Self::scan_recursive(node, String::new(), &mut result);
+            }
+        result
+    }
 }
 
 mod tests {
     use super::*;
+
+    fn setup_tree() -> Tree {
+        let paths = Vec::from([
+            ("a", "A"),
+            ("ab", "AB"), 
+            ("abc", "ABC"), 
+            ("abcd", "ABCD"), 
+            ("d", "D"), 
+            ("dc", "DC")
+        ]);
+        let mut tree = Tree::new();
+        paths.into_iter().for_each(|(s, v)| tree.insert(s, v));
+        tree
+    }
 
     #[test]
     fn test_node() {
@@ -264,5 +297,30 @@ mod tests {
         let mut tree = Tree::new();
         tree.insert("ŠšŠ", "ŪūŪ");
         assert_eq!(tree.get("ŠšŠ").unwrap(), "ŪūŪ".to_string());
+    }
+
+    #[test]
+    fn test_scan() {
+        let tree = setup_tree();
+        let result = tree.scan();
+
+        // Define all the necessary variables upfront
+        let a = "A".to_string();
+        let ab = "AB".to_string();
+        let abc = "ABC".to_string();
+        let abcd = "ABCD".to_string();
+        let d = "D".to_string();
+        let dc = "DC".to_string();
+        
+        // Create the vector with references to the variables
+        let want = vec![
+            ("a".to_string(), &a),
+            ("ab".to_string(), &ab),
+            ("abc".to_string(), &abc),
+            ("abcd".to_string(), &abcd),
+            ("d".to_string(), &d),
+            ("dc".to_string(), &dc),
+        ];        
+        assert_eq!(result, want)
     }
 }
