@@ -63,20 +63,6 @@ impl Tree {
         first_char // Return the first character
     }
 
-    fn insert_recursive(mut path: &str, value: &str, mut current_node: &mut Box<Node>) {
-        if path.is_empty() {
-            current_node.value = Some(value.to_string());
-            return;
-        }
-        let first_char = Self::consume_path(&mut path);
-        if let Some(child) = current_node.get_child_mut(first_char) {
-            Self::insert_recursive(path, value, child)
-        } else {
-            current_node.children.push(Box::new(Node::new(first_char)));
-            Self::insert_recursive(path, value, current_node.children.last_mut().unwrap())
-        }
-    }
-
     /// Inserts given valia to a given path.
     pub fn insert(&mut self, mut path: &str, value: &str) {
         if path.is_empty() {
@@ -97,6 +83,20 @@ impl Tree {
             let new_node = Box::new(Node::new(first_char));
             self.root.push(new_node);
             Self::insert_recursive(path, value, self.root.iter_mut().last().unwrap());
+        }
+    }
+
+    fn insert_recursive(mut path: &str, value: &str, mut current_node: &mut Box<Node>) {
+        if path.is_empty() {
+            current_node.value = Some(value.to_string());
+            return;
+        }
+        let first_char = Self::consume_path(&mut path);
+        if let Some(child) = current_node.get_child_mut(first_char) {
+            Self::insert_recursive(path, value, child)
+        } else {
+            current_node.children.push(Box::new(Node::new(first_char)));
+            Self::insert_recursive(path, value, current_node.children.last_mut().unwrap())
         }
     }
 
@@ -196,7 +196,20 @@ impl Tree {
         false // Node with the specified path was not found
     }
 
-    fn scan_recursive<'a>(node: &'a Box<Node>, mut path: String, result: &mut Vec<(String, &'a String)>) {
+    /// This function returns all possible keys and all possible values inserted.
+    pub fn scan<'a>(&'a self) -> Vec<(String, &'a String)> {
+        let mut result: Vec<(String, &'a String)> = Vec::new();
+        for node in self.root.iter() {
+            Self::scan_recursive(node, String::new(), &mut result);
+        }
+        result
+    }
+
+    fn scan_recursive<'a>(
+        node: &'a Box<Node>,
+        mut path: String,
+        result: &mut Vec<(String, &'a String)>,
+    ) {
         path.push(node.name.clone());
         if let Some(value) = &node.value {
             result.push((path.clone(), value));
@@ -204,15 +217,6 @@ impl Tree {
         for child in node.children.iter() {
             Self::scan_recursive(child, path.clone(), result)
         }
-    }
-
-    /// This function returns all possible keys and all possible values inserted.
-    pub fn scan<'a>(&'a self) -> Vec<(String, &'a String)>{
-        let mut result: Vec<(String, &'a String)> = Vec::new();
-        for node in self.root.iter() {
-                Self::scan_recursive(node, String::new(), &mut result);
-            }
-        result
     }
 }
 
@@ -222,11 +226,11 @@ mod tests {
     fn setup_tree() -> Tree {
         let paths = Vec::from([
             ("a", "A"),
-            ("ab", "AB"), 
-            ("abc", "ABC"), 
-            ("abcd", "ABCD"), 
-            ("d", "D"), 
-            ("dc", "DC")
+            ("ab", "AB"),
+            ("abc", "ABC"),
+            ("abcd", "ABCD"),
+            ("d", "D"),
+            ("dc", "DC"),
         ]);
         let mut tree = Tree::new();
         paths.into_iter().for_each(|(s, v)| tree.insert(s, v));
@@ -304,15 +308,13 @@ mod tests {
         let tree = setup_tree();
         let result = tree.scan();
 
-        // Define all the necessary variables upfront
         let a = "A".to_string();
         let ab = "AB".to_string();
         let abc = "ABC".to_string();
         let abcd = "ABCD".to_string();
         let d = "D".to_string();
         let dc = "DC".to_string();
-        
-        // Create the vector with references to the variables
+
         let want = vec![
             ("a".to_string(), &a),
             ("ab".to_string(), &ab),
@@ -320,7 +322,7 @@ mod tests {
             ("abcd".to_string(), &abcd),
             ("d".to_string(), &d),
             ("dc".to_string(), &dc),
-        ];        
+        ];
         assert_eq!(result, want)
     }
 }

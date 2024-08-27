@@ -16,16 +16,16 @@ impl Client {
         // Connect to the server
         let mut stream = TcpStream::connect(&self.host)?;
         println!("Connected to the server.");
-    
+
         // Send the command to the server
         stream.write_all(command.as_bytes())?;
         stream.write_all(b"\n")?; // Send a newline to indicate the end of the command
-    
+
         // Read the response from the server
         let mut reader = BufReader::new(&stream);
         let mut response = String::new();
         reader.read_line(&mut response)?;
-    
+
         Ok(response)
     }
 
@@ -38,18 +38,17 @@ impl Client {
         let command = format!("get {}", path);
         self.send_command(&command)
     }
-    
+
     pub fn hit(&self, path: &str) -> io::Result<String> {
         let command = format!("hit {}", path);
         self.send_command(&command)
     }
-    
+
     pub fn delete(&self, path: &str) -> io::Result<String> {
         let command = format!("delete {}", path);
         self.send_command(&command)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
