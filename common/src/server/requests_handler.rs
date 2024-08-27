@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::dsa::char_tree::Tree;
 use crate::server::commands::ServerCommand;
+use crate::server::helpers::csv::dump_as_csv;
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
 use crate::server::response::ResponseStatus;
 
@@ -60,6 +61,15 @@ fn execute(
         ServerCommand::Delete => {
             tree.deep_delete(path);
             ResponseStatus::Ok(format!("deleted: {}", path))
+        }
+        ServerCommand::Dump => {
+            //TODO: move this method to client side, and create write to disc method instead.
+            let result: Vec<(String, &String)> = tree.scan();
+            match dump_as_csv(result, "tree.csv") {
+                Ok(()) => ResponseStatus::Ok("tree saved as csv".to_string()),
+                Err(e) => ResponseStatus::Error(ServerError::DataBaseError(e.to_string())),
+            }
+            
         }
         _ => ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(
             SyntaxErrType::UnknownCommand(request.to_string()),

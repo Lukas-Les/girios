@@ -4,6 +4,7 @@ pub enum ServerCommand {
     Get,
     Hit,
     Scan,
+    Dump,
     Nop,
 }
 
@@ -15,6 +16,7 @@ impl From<&str> for ServerCommand {
             "hit" | "HIT" => ServerCommand::Hit,
             "insert" | "INSERT" => ServerCommand::Insert,
             "scan" | "SCAN" => ServerCommand::Scan,
+            "dump" | "DUMP" => ServerCommand::Dump,
             _ => ServerCommand::Nop,
         }
     }
