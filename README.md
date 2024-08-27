@@ -35,6 +35,7 @@ insert <path> <value>
 get <path>
 hit <path>
 delete <path>
+scan
 ```
 
 e.g.
