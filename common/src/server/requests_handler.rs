@@ -1,3 +1,4 @@
+use std::result;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::dsa::char_tree::Tree;
@@ -46,6 +47,15 @@ fn execute(
             } else {
                 ResponseStatus::NoData(format!("{} -> x", path))
             }
+        }
+        ServerCommand::Scan => {
+            let result = tree.scan();
+            let output = result
+                .iter()
+                .map(|(path, value)| format!("{} -> {}", path, value))
+                .collect::<Vec<_>>()
+                .join("\n");
+            ResponseStatus::Ok(output)
         }
         ServerCommand::Delete => {
             tree.deep_delete(path);
