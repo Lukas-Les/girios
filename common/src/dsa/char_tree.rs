@@ -44,8 +44,8 @@ impl Node {
 /// Use insert(path: &str, value: &str) to insert value and
 /// get(path: &str) to retireve it.
 pub struct Tree {
+    pub name: String,
     root: Vec<Box<Node>>,
-    name: String,
 }
 
 impl Tree {

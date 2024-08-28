@@ -1,4 +1,6 @@
 use std::fmt;
+use std::error::Error;
+
 
 pub enum SyntaxErrType {
     ValueMissing,
@@ -24,6 +26,12 @@ impl fmt::Display for RequestErrorType {
 pub enum ServerError {
     RequestError(RequestErrorType),
     DataBaseError(String),
+}
+
+impl ServerError {
+    pub fn from_database(err: Box<dyn Error>) -> Self {
+        ServerError::DataBaseError(err.to_string())
+    }
 }
 
 impl fmt::Display for ServerError {

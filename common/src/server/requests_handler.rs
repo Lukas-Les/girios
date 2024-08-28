@@ -4,8 +4,9 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dsa::char_tree::Tree;
 use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
-use crate::server::helpers::csv::dump_as_csv;
+use crate::server::helpers::flush::flush;
 use crate::server::response::ResponseStatus;
+
 
 fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
     let mut parts = request.split_whitespace();
@@ -64,9 +65,8 @@ fn execute(
         }
         ServerCommand::Read(ReadType::Dump(file_type)) => {
             //TODO: move this method to client side, and create write to disc method instead.
-            let result: Vec<(String, &String)> = tree.scan();
             match file_type {
-                FileType::Csv => match dump_as_csv(result, "tree.csv") {
+                FileType::Csv => match flush(tree) {
                     Ok(()) => ResponseStatus::Ok("tree saved as csv".to_string()),
                     Err(e) => ResponseStatus::Error(ServerError::DataBaseError(e.to_string())),
                 },
