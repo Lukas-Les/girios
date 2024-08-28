@@ -2,9 +2,9 @@ use std::result;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::dsa::char_tree::Tree;
-use crate::server::commands::ServerCommand;
-use crate::server::helpers::csv::dump_as_csv;
+use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
+use crate::server::helpers::csv::dump_as_csv;
 use crate::server::response::ResponseStatus;
 
 fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
@@ -24,7 +24,7 @@ fn execute(
     request: &str,
 ) -> ResponseStatus {
     match command {
-        ServerCommand::Insert => {
+        ServerCommand::ReadWrite(ReadWriteType::Insert) => {
             if let Some(v) = value {
                 println!("inserting value: {}", v);
                 tree.insert(path, v);
@@ -35,21 +35,21 @@ fn execute(
                 )))
             }
         }
-        ServerCommand::Get => {
+        ServerCommand::Read(ReadType::Get) => {
             if let Some(result) = tree.get(path) {
                 ResponseStatus::Ok(format!("{} -> {}", path, result))
             } else {
                 ResponseStatus::NoData(format!("{} -> x", path))
             }
         }
-        ServerCommand::Hit => {
+        ServerCommand::Read(ReadType::Hit) => {
             if let Some(result) = tree.hit(path) {
                 ResponseStatus::Ok(format!("{} -> {}", path, result))
             } else {
                 ResponseStatus::NoData(format!("{} -> x", path))
             }
         }
-        ServerCommand::Scan => {
+        ServerCommand::Read(ReadType::Scan) => {
             let result = tree.scan();
             let output = result
                 .iter()
@@ -58,18 +58,19 @@ fn execute(
                 .join("\n");
             ResponseStatus::Ok(output)
         }
-        ServerCommand::Delete => {
+        ServerCommand::ReadWrite(ReadWriteType::Delete) => {
             tree.deep_delete(path);
             ResponseStatus::Ok(format!("deleted: {}", path))
         }
-        ServerCommand::Dump => {
+        ServerCommand::Read(ReadType::Dump(file_type)) => {
             //TODO: move this method to client side, and create write to disc method instead.
             let result: Vec<(String, &String)> = tree.scan();
-            match dump_as_csv(result, "tree.csv") {
-                Ok(()) => ResponseStatus::Ok("tree saved as csv".to_string()),
-                Err(e) => ResponseStatus::Error(ServerError::DataBaseError(e.to_string())),
+            match file_type {
+                FileType::Csv => match dump_as_csv(result, "tree.csv") {
+                    Ok(()) => ResponseStatus::Ok("tree saved as csv".to_string()),
+                    Err(e) => ResponseStatus::Error(ServerError::DataBaseError(e.to_string())),
+                },
             }
-            
         }
         _ => ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(
             SyntaxErrType::UnknownCommand(request.to_string()),
