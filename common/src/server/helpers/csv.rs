@@ -1,10 +1,11 @@
+use csv::Writer;
 use std::error::Error;
 use std::fs::File;
-use csv::Writer;
 
-
-pub fn dump_as_csv(result: Vec<(String, &String)>, out_file_name: &str) -> Result<(), Box<dyn Error>>{
-
+pub fn dump_as_csv(
+    result: Vec<(String, &String)>,
+    out_file_name: &str,
+) -> Result<(), Box<dyn Error>> {
     let mut wtr = Writer::from_writer(File::create(out_file_name)?);
 
     // Write the header (if needed)

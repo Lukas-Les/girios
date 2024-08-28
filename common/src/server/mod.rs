@@ -1,5 +1,5 @@
 mod commands;
-mod helpers;
 pub mod errors;
+mod helpers;
 pub mod requests_handler;
 pub mod response;
