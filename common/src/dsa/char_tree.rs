@@ -3,7 +3,7 @@
 //! ```
 //! use common::dsa::char_tree::Tree;
 //!
-//! let mut tree = Tree::new();
+//! let mut tree = Tree::new("tree_name".to_string());
 //! tree.insert("mypath", "somevalue");
 //! let result = tree.get("mypath").unwrap();
 //! let other_result = tree.hit("mypathbutlonger").unwrap();
@@ -45,11 +45,12 @@ impl Node {
 /// get(path: &str) to retireve it.
 pub struct Tree {
     root: Vec<Box<Node>>,
+    name: String,
 }
 
 impl Tree {
-    pub fn new() -> Self {
-        Tree { root: Vec::new() }
+    pub fn new(name: String) -> Self {
+        Tree { root: Vec::new() , name: name}
     }
 
     fn consume_path(path: &mut &str) -> char {
@@ -232,7 +233,7 @@ mod tests {
             ("d", "D"),
             ("dc", "DC"),
         ]);
-        let mut tree = Tree::new();
+        let mut tree = Tree::new("test".to_string());
         paths.into_iter().for_each(|(s, v)| tree.insert(s, v));
         tree
     }
@@ -272,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_insert_various_chars() {
-        let mut tree = Tree::new();
+        let mut tree = Tree::new("test".to_string());
         tree.insert("ŠšŠ", "ŪūŪ");
         assert_eq!(tree.get("ŠšŠ").unwrap(), "ŪūŪ".to_string());
     }

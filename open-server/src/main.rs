@@ -8,7 +8,7 @@ use common::server::requests_handler::handle_request;
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
     // Create a shared, thread-safe instance of Tree
-    let tree = Arc::new(Mutex::new(Tree::new()));
+    let tree = Arc::new(Mutex::new(Tree::new("main".to_string())));
 
     // Start listening for incoming TCP connections
     let listener = TcpListener::bind("127.0.0.1:42069").await?;
