@@ -1,4 +1,3 @@
-use std::result;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::dsa::char_tree::Tree;
@@ -29,6 +28,7 @@ fn execute(
             if let Some(v) = value {
                 println!("inserting value: {}", v);
                 tree.insert(path, v);
+                let _ = flush(tree);
                 ResponseStatus::Ok(format!("{} -> {}", v, path))
             } else {
                 ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(
@@ -61,6 +61,7 @@ fn execute(
         }
         ServerCommand::ReadWrite(ReadWriteType::Delete) => {
             tree.deep_delete(path);
+            let _ = flush(tree);
             ResponseStatus::Ok(format!("deleted: {}", path))
         }
         ServerCommand::Read(ReadType::Dump(file_type)) => {
