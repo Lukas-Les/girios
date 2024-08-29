@@ -1,91 +1,88 @@
 mod cfg;
 mod errors;
 
+use std::time::Duration;
+
 use std::env;
 use std::io::{self, Write, BufRead, BufReader};
 use std::net::TcpStream;
-
 use cfg::Config;
-
 
 fn main() -> io::Result<()> {
     // let args: Vec<String> = env::args().collect();
     let args = vec!["/mnt/e/github/girios".to_string(), "--host".to_string(), "127.0.0.1:42069".to_string()];
-
     let cfg: Config = match Config::try_from(args) {
-        Ok(config) => config,  // If successful, store the Config in cfg
+        Ok(config) => config,
         Err(e) => {
-            eprintln!("Error: {}", e);  // Print the error message
+            eprintln!("Error: {}", e);
             return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
         }
     };
 
     // Connect to the server
     let mut stream = TcpStream::connect(&cfg.host)?;
-    println!(r"_______ _________ _______ _________ _______  _______ ");
-    println!(r"(  ____ \\__   __/(  ____ )\__   __/(  ___  )(  ____ \");
-    println!(r"| (    \/   ) (   | (    )|   ) (   | (   ) || (    \/");
-    println!(r"| |         | |   | (____)|   | |   | |   | || (_____ ");
-    println!(r"| | ____    | |   |     __)   | |   | |   | |(_____  )");
-    println!(r"| | \_  )   | |   | (\ (      | |   | |   | |      ) |");
-    println!(r"| (___) |___) (___| ) \ \_____) (___| (___) |/\____) |");
-    println!(r"(_______)\_______/|/   \__/\_______/(_______)\_______)");
+    println!(r" ______ _________ ______  _________ _____    ______  ");
+    println!(r"(  ___ |\__   __/(  __  ) \__   __/( ____ \ ( ______)");
+    println!(r"| (        ) (   | (  ) |    ) (   | (   | || (      ");
+    println!(r"| |        | |   | (__) |    | |   | |   | || (_____ ");
+    println!(r"| |v0.1.1  | |   |     _)    | |   | |   | |(_____  )");
+    println!(r"| | \_  )  | |   | (\ (      | |   | |   | )      ) |");
+    println!(r"| (___) |__) (___| ) \ \_____) (___| (___| |/\____) |");
+    println!(r"(_______)\_______/_)  \__/\_______/(_______)\_______) ");
     println!();
-    
     println!("Connected to the server at {}", &cfg.host);
+    println!("Commands:");
+    println!("\tinsert <path> <value>");
+    println!("\tget <path>");
+    println!("\thit <path>");
+    println!("\tscan");
+    println!("\tdelete <path>");
 
-    let mut input = String::new();
+
     let stdin = io::stdin();
     let mut reader = BufReader::new(stream.try_clone()?);
 
     loop {
-        // Prompt the user for input
         print!("> ");
-        io::stdout().flush()?; // Ensure the prompt is printed
+        io::stdout().flush()?;
 
-        // Read user input from stdin
-        input.clear();
+        let mut input = String::new();
         stdin.read_line(&mut input)?;
+        let input = input.trim_end();
 
-        // Trim the input to remove any newline or whitespace
-        let command = input.trim();
-
-        // If the user types "exit", break the loop and close the connection
-        if command.eq_ignore_ascii_case("exit") {
+        if input.eq_ignore_ascii_case("exit") {
             println!("Closing connection.");
             break;
         }
-        if command.is_empty() {
-            continue; // Go back to the start of the loop without sending to the server
+
+        if input.is_empty() {
+            continue;
         }
 
-        // Send the command to the server
-        stream.write_all(command.as_bytes())?;
-        // stream.write_all(b"\n")?; // Send a newline after each command to signal end of input
+        stream.write_all(input.as_bytes())?;
+        // stream.write_all(b"\n")?;
+        stream.flush()?;
 
-        // Read all available responses from the server
+        // Set a short timeout for reading
+        stream.set_read_timeout(Some(Duration::from_millis(100)))?;
+
+        let mut response = String::new();
         loop {
-            let mut response = String::new();
-            let bytes_read = reader.read_line(&mut response)?;
-
-            if bytes_read == 0 {
-                // No more data to read; break out of the loop
-                break;
-            }
-
-            // Display the server's response
-            println!("{}", response);
-
-            // Optionally, add logic here to determine if you've received all responses
-            // For example, if you know the server sends a specific end marker, check for that
-            // If the response indicates the end of a transmission or is empty, break
-            if response.trim().is_empty() || response.trim() == "END" {
-                break;
+            match reader.read_line(&mut response) {
+                Ok(0) | Err(_) => break, // End of stream or timeout
+                Ok(_) => {
+                    print!("{}", response);
+                    io::stdout().flush()?;
+                    response.clear();
+                }
             }
         }
+
+        // Reset the timeout to None (blocking mode)
+        stream.set_read_timeout(None)?;
+
+        println!(); // Ensure we're on a new line before the next prompt
     }
 
-    // Explicitly drop the stream to close the connection
-    drop(stream);
     Ok(())
 }
