@@ -31,13 +31,14 @@ fn main() -> io::Result<()> {
     println!(r"(_______)\_______/_)  \__/\_______/(_______)\_______) ");
     println!();
     println!("Connected to the server at {}", &cfg.host);
-    println!("Commands:");
-    println!("\tinsert <path> <value>");
-    println!("\tget <path>");
-    println!("\thit <path>");
-    println!("\tscan");
-    println!("\tdelete <path>");
-
+    println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    println!("| Commands:                \t|");
+    println!("|\tinsert <path> <value>   |");
+    println!("|\tget <path>              |");
+    println!("|\thit <path>              |");
+    println!("|\tscan                    |");
+    println!("|\tdelete <path>           |");
+    println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
     let stdin = io::stdin();
     let mut reader = BufReader::new(stream.try_clone()?);
