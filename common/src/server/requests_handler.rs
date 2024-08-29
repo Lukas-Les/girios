@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dsa::char_tree::Tree;
 use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
-use crate::server::helpers::flush::flush;
+use crate::server::helpers::flush::{flush, update_status_file};
 use crate::server::response::ResponseStatus;
 
 
@@ -27,8 +27,8 @@ fn execute(
         ServerCommand::ReadWrite(ReadWriteType::Insert) => {
             if let Some(v) = value {
                 println!("inserting value: {}", v);
-                tree.insert(path, v);
-                let _ = flush(tree);
+                tree.insert(path, &v);
+                let _ = update_status_file(path, v, &tree.name);
                 ResponseStatus::Ok(format!("{} -> {}", v, path))
             } else {
                 ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(

@@ -1,6 +1,9 @@
-use csv::Writer;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
+
+use csv::Writer;
+
 
 pub fn dump_as_csv(
     result: Vec<(String, &String)>,
@@ -22,4 +25,12 @@ pub fn dump_as_csv(
     println!("Data has been written to {}", out_file_name);
 
     Ok(())
+}
+
+
+pub fn update_file(path: &str, value: &str, out_file_name: &str) {
+    if let Ok(mut target_file) = OpenOptions::new().append(true).create(true).open(out_file_name) {
+        let data = format!("{},{}\n", path, value);
+        let _ = target_file.write(data.as_bytes());
+    }
 }
