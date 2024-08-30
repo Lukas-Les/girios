@@ -13,8 +13,13 @@
 //! tree.deep_delete("mypath");
 //! assert_eq!(tree.get("mypath"), None);
 //! ```
+//! 
 
-#[derive(Debug)]
+
+use serde::{Deserialize, Serialize};
+
+
+#[derive(Serialize, Deserialize, Debug)]
 struct Node {
     name: char,
     value: Option<String>,
@@ -40,9 +45,11 @@ impl Node {
     }
 }
 
+
 /// The Tree struct allows you to store &str values on a provided char path;
 /// Use insert(path: &str, value: &str) to insert value and
 /// get(path: &str) to retireve it.
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Tree {
     pub name: String,
     root: Vec<Box<Node>>,

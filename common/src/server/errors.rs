@@ -32,6 +32,10 @@ impl ServerError {
     pub fn from_database(err: Box<dyn Error>) -> Self {
         ServerError::DataBaseError(err.to_string())
     }
+
+    pub fn from_io(err: std::io::Error) -> Self {
+        ServerError::DataBaseError(err.to_string())
+    }
 }
 
 impl fmt::Display for ServerError {
