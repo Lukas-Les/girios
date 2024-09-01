@@ -28,7 +28,7 @@ fn execute(
             if let Some(v) = value {
                 println!("inserting value: {}", v);
                 tree.insert(path, &v);
-                ResponseStatus::Ok(format!("{} -> {}", v, path))
+                ResponseStatus::Ok(format!("{} -> {}", path, v))
             } else {
                 ResponseStatus::Error(ServerError::RequestError(RequestErrorType::SyntaxErr(
                     SyntaxErrType::ValueMissing,
@@ -39,14 +39,14 @@ fn execute(
             if let Some(result) = tree.get(path) {
                 ResponseStatus::Ok(format!("{} -> {}", path, result))
             } else {
-                ResponseStatus::NoData(format!("{} -> x", path))
+                ResponseStatus::NoData(format!("{} ->", path))
             }
         }
         ServerCommand::Read(ReadType::Hit) => {
             if let Some(result) = tree.hit(path) {
                 ResponseStatus::Ok(format!("{} -> {}", path, result))
             } else {
-                ResponseStatus::NoData(format!("{} -> x", path))
+                ResponseStatus::NoData(format!("{} ->", path))
             }
         }
         ServerCommand::Read(ReadType::Scan) => {
