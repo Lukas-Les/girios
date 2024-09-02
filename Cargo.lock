@@ -79,6 +79,13 @@ name = "cli-client"
 version = "0.1.0"
 
 [[package]]
+name = "client"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
+
+[[package]]
 name = "common"
 version = "0.1.0"
 dependencies = [
@@ -176,13 +183,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27b64972346851a39438c60b341ebc01bba47464ae329e55cf343eb93964efd9"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "open-client"
-version = "0.1.0"
-dependencies = [
- "common",
 ]
 
 [[package]]
