@@ -133,15 +133,22 @@ impl Tree {
         }
         let first_char = Self::consume_path(&mut path);
         let mut current_node = self.root.iter().find(|&n| n.name == first_char)?;
+        let mut last_value = &current_node.value;
         while !path.is_empty() {
             let first_char = Self::consume_path(&mut path);
             if let Some(child) = current_node.get_child_ref(first_char) {
+                if current_node.value.is_some() {
+                    last_value = &current_node.value;
+                }
                 current_node = child;
             } else {
                 break;
             };
         }
-        current_node.value.clone()
+        if current_node.value.is_some() {
+            return current_node.value.clone();
+        }
+        last_value.clone()
     }
 
     /// This a legacy shallow delete method, use deep_delete() instead.
@@ -228,6 +235,7 @@ impl Tree {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -260,9 +268,14 @@ mod tests {
 
     #[test]
     fn test_insert_and_hit() {
-        let tree = setup_tree();
-        assert_eq!(tree.hit("dee").unwrap(), "D".to_string());
-        assert_eq!(tree.hit("ababab").unwrap(), "AB".to_string());
+        let mut tree = setup_tree();
+        tree.insert("WAU", "car1");
+        tree.insert("WAUAAA", "car2");
+
+        assert_eq!(tree.hit("WAU").unwrap(), "car1".to_string());
+        assert_eq!(tree.hit("WAUA").unwrap(), "car1".to_string());
+        assert_eq!(tree.hit("WAUAAA").unwrap(), "car2".to_string());
+        assert_eq!(tree.hit("WAUAAAA").unwrap(), "car2".to_string());
     }
 
     #[test]

@@ -43,3 +43,6 @@ e.g.
 insert foo bar
 ```
 will insert value bar into path foo
+
+
+## [Roadmap](https://docs.google.com/spreadsheets/d/1rAe194TiP8Uh3TWq-6t2CMmyK_q8IUbezFoHdePunWQ/edit?usp=sharing)
