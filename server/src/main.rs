@@ -1,9 +1,11 @@
+mod server;
+
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 use common::dsa::char_tree::Tree;
-use common::server::requests_handler::handle_request;
+use server::requests_handler::handle_request;
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {

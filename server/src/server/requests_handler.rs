@@ -1,9 +1,9 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use crate::dsa::char_tree::Tree;
+use common::dsa::char_tree::Tree;
 use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
-use crate::server::helpers::flush::{flush, update_status_file};
+use crate::server::helpers::flush::flush;
 use crate::server::response::ResponseStatus;
 
 

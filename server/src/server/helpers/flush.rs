@@ -1,6 +1,6 @@
 use std::sync::MutexGuard;
 
-use crate::dsa::char_tree::Tree;
+use common::dsa::char_tree::Tree;
 use crate::server::errors::ServerError;
 use crate::server::helpers::csv::{dump_as_csv, update_file};
 

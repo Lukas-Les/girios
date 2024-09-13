@@ -90,8 +90,6 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "csv",
- "serde",
 ]
 
 [[package]]
@@ -284,6 +282,7 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "common",
+ "csv",
  "tokio",
 ]
 
