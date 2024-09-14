@@ -4,13 +4,13 @@ use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
-use common::dsa::char_tree::Tree;
+use common::dsa::char_tree::CharTree;
 use server::requests_handler::handle_request;
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
     // Create a shared, thread-safe instance of Tree
-    let tree = Arc::new(Mutex::new(Tree::new("main".to_string())));
+    let tree = Arc::new(Mutex::new(CharTree::new("main".to_string())));
 
     // Start listening for incoming TCP connections
     let listener = TcpListener::bind("127.0.0.1:42069").await?;

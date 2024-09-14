@@ -47,14 +47,14 @@ impl Node {
 /// Use insert(path: &str, value: &str) to insert value and
 /// get(path: &str) to retireve it.
 #[derive(Debug)]
-pub struct Tree {
+pub struct CharTree {
     pub name: String,
     root: Vec<Box<Node>>,
 }
 
-impl Tree {
+impl CharTree {
     pub fn new(name: String) -> Self {
-        Tree { root: Vec::new() , name: name}
+        CharTree { root: Vec::new() , name: name}
     }
 
     fn consume_path(path: &mut &str) -> char {
@@ -236,7 +236,7 @@ impl Tree {
 mod tests {
     use super::*;
 
-    fn setup_tree() -> Tree {
+    fn setup_tree() -> CharTree {
         let paths = Vec::from([
             ("a", "A"),
             ("ab", "AB"),
@@ -245,7 +245,7 @@ mod tests {
             ("d", "D"),
             ("dc", "DC"),
         ]);
-        let mut tree = Tree::new("test".to_string());
+        let mut tree = CharTree::new("test".to_string());
         paths.into_iter().for_each(|(s, v)| tree.insert(s, v));
         tree
     }
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_insert_various_chars() {
-        let mut tree = Tree::new("test".to_string());
+        let mut tree = CharTree::new("test".to_string());
         tree.insert("ŠšŠ", "ŪūŪ");
         assert_eq!(tree.get("ŠšŠ").unwrap(), "ŪūŪ".to_string());
     }

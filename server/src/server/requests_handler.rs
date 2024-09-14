@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use common::dsa::char_tree::Tree;
+use common::dsa::char_tree::CharTree;
 use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
 use crate::server::helpers::flush::flush;
@@ -17,7 +17,7 @@ fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
 }
 
 fn execute(
-    mut tree: MutexGuard<Tree>,
+    mut tree: MutexGuard<CharTree>,
     command: ServerCommand,
     path: &str,
     value: Option<&str>,
@@ -77,7 +77,7 @@ fn execute(
     }
 }
 
-pub async fn handle_request(tree: &Arc<Mutex<Tree>>, request: &str) -> ResponseStatus {
+pub async fn handle_request(tree: &Arc<Mutex<CharTree>>, request: &str) -> ResponseStatus {
     let (command, path, value) = parse_request(request);
     let tree = tree.lock();
     //TODO: implement recovery from poisoned mutex;

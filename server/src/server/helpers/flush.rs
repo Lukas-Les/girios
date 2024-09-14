@@ -1,11 +1,11 @@
 use std::sync::MutexGuard;
 
-use common::dsa::char_tree::Tree;
+use common::dsa::char_tree::CharTree;
 use crate::server::errors::ServerError;
 use crate::server::helpers::csv::{dump_as_csv, update_file};
 
 
-pub fn flush(tree: MutexGuard<Tree>) -> Result<(), ServerError>{
+pub fn flush(tree: MutexGuard<CharTree>) -> Result<(), ServerError>{
     let result = tree.scan();
     let file_name = format!("{}.csv", &tree.name);
     dump_as_csv(result, &file_name).map_err(ServerError::from_database)?;
