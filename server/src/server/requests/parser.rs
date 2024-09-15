@@ -1,7 +1,15 @@
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum RequestParserError{
     InvalidRequest,
+    FailedToReadBytes(String),
 }
+
+impl RequestParserError {
+    fn from_request(err: String) -> Self {
+        Self::FailedToReadBytes(err)
+    }
+}
+
 
 
 enum DataStructureType {
@@ -31,11 +39,8 @@ pub enum RequestToken {
     DsOp(String),
 }
 
-
-impl TryFrom<String> for RequestToken {
-    type Error = RequestParserError;
-
-    fn try_from(value: String) -> Result<Self, RequestParserError> {
+impl RequestToken {
+    fn from_string(value: String) -> Result<Self, RequestParserError> {
         let (root_command, leftover) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
@@ -46,16 +51,25 @@ impl TryFrom<String> for RequestToken {
             "destroy" => Ok(RequestToken::PlatformOp(PlatformOpType::DestroyStructure(DataStructureType::try_from(leftover)?))),
             _ => Ok(RequestToken::DsOp(leftover.to_string())),
         }
-    }
+    } 
 }
 
 
-pub fn tokenize_request(request_bytes: &[u8]) -> Result<RequestToken, RequestParserError> {
-    let request = match std::str::from_utf8(request_bytes) {
-        Ok(v) => v,
-        Err(_) => return Err(RequestParserError::InvalidRequest),
-    };
-    RequestToken::try_from(request.to_string())
+impl TryFrom<String> for RequestToken {
+    type Error = RequestParserError;
+
+    fn try_from(value: String) -> Result<Self, RequestParserError> {
+        Self::from_string(value)
+    }
+}
+
+impl TryFrom<&[u8]> for RequestToken {
+    type Error = RequestParserError;
+
+    fn try_from(value: &[u8]) -> Result<Self, RequestParserError> {
+        let request_str = std::str::from_utf8(value).map_err(|e| RequestParserError::from_request(e.to_string()))?; 
+        Self::from_string(request_str.to_string())
+    }
 }
 
 
