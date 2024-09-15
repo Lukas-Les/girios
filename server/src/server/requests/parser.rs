@@ -1,5 +1,5 @@
 #[derive(PartialEq, Debug)]
-pub enum RequestParserError{
+pub enum RequestParserError {
     InvalidRequest,
     FailedToReadBytes(String),
 }
@@ -9,8 +9,6 @@ impl RequestParserError {
         Self::FailedToReadBytes(err)
     }
 }
-
-
 
 enum DataStructureType {
     Ctree,
@@ -26,13 +24,11 @@ impl TryFrom<&str> for DataStructureType {
     }
 }
 
-
 enum PlatformOpType {
     CreateStructure(DataStructureType),
     DestroyStructure(DataStructureType),
     Invalid,
 }
-
 
 pub enum RequestToken {
     PlatformOp(PlatformOpType),
@@ -45,15 +41,18 @@ impl RequestToken {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
         };
-        
+
         match root_command {
-            "create" => Ok(RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::try_from(leftover)?))),
-            "destroy" => Ok(RequestToken::PlatformOp(PlatformOpType::DestroyStructure(DataStructureType::try_from(leftover)?))),
+            "create" => Ok(RequestToken::PlatformOp(PlatformOpType::CreateStructure(
+                DataStructureType::try_from(leftover)?,
+            ))),
+            "destroy" => Ok(RequestToken::PlatformOp(PlatformOpType::DestroyStructure(
+                DataStructureType::try_from(leftover)?,
+            ))),
             _ => Ok(RequestToken::DsOp(leftover.to_string())),
         }
-    } 
+    }
 }
-
 
 impl TryFrom<String> for RequestToken {
     type Error = RequestParserError;
@@ -67,11 +66,11 @@ impl TryFrom<&[u8]> for RequestToken {
     type Error = RequestParserError;
 
     fn try_from(value: &[u8]) -> Result<Self, RequestParserError> {
-        let request_str = std::str::from_utf8(value).map_err(|e| RequestParserError::from_request(e.to_string()))?; 
+        let request_str = std::str::from_utf8(value)
+            .map_err(|e| RequestParserError::from_request(e.to_string()))?;
         Self::from_string(request_str.to_string())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -83,7 +82,9 @@ mod tests {
         let result = RequestToken::from_string(request);
         assert!(result.is_ok());
         match result.unwrap() {
-            RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree)) => (),
+            RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree)) => {
+                ()
+            }
             _ => panic!("unexpected result"),
         }
     }

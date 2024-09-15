@@ -1,6 +1,5 @@
-use std::fmt;
 use std::error::Error;
-
+use std::fmt;
 
 pub enum SyntaxErrType {
     ValueMissing,

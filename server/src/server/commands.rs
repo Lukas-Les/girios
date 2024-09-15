@@ -14,7 +14,6 @@ pub enum ReadType {
     Dump(FileType),
 }
 
-
 pub enum ServerCommand {
     ReadWrite(ReadWriteType),
     Read(ReadType),

@@ -1,11 +1,10 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use common::dsa::char_tree::CharTree;
 use crate::server::commands::{FileType, ReadType, ReadWriteType, ServerCommand};
 use crate::server::errors::{RequestErrorType, ServerError, SyntaxErrType};
 use crate::server::helpers::flush::flush;
 use crate::server::response::ResponseStatus;
-
+use common::dsa::char_tree::CharTree;
 
 fn parse_request(request: &str) -> (ServerCommand, &str, Option<&str>) {
     let mut parts = request.split_whitespace();
