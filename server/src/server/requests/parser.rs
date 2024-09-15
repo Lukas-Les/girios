@@ -79,8 +79,8 @@ mod tests {
 
     #[test]
     fn test_tokenize_request() {
-        let request = "create ctree";
-        let result = tokenize_request(request.as_bytes());
+        let request = "create ctree".to_string();
+        let result = RequestToken::from_string(request);
         assert!(result.is_ok());
         match result.unwrap() {
             RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree)) => (),
