@@ -11,14 +11,18 @@ impl RequestParserError {
 }
 
 enum DataStructureType {
-    Ctree,
+    Ctree{name: String},
 }
 
-impl TryFrom<&str> for DataStructureType {
+impl TryFrom<String> for DataStructureType {
     type Error = RequestParserError;
-    fn try_from(value: &str) -> Result<Self, RequestParserError> {
-        match value {
-            "ctree" => Ok(DataStructureType::Ctree),
+    fn try_from(value: String) -> Result<Self, RequestParserError> {
+        let (structure_type, structure_name) = match value.split_once(" ") {
+            Some(result) => result,
+            None => return Err(RequestParserError::InvalidRequest),
+        };        
+        match structure_type {
+            "ctree" => Ok(DataStructureType::Ctree { name: structure_name.to_string() }),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
@@ -37,11 +41,11 @@ pub enum RequestToken {
 
 impl RequestToken {
     fn from_string(value: String) -> Result<Self, RequestParserError> {
-        let (root_command, leftover) = match value.split_once(" ") {
+        let (root_command, leftover_str) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
         };
-
+        let leftover = leftover_str.to_string();
         match root_command {
             "create" => Ok(RequestToken::PlatformOp(PlatformOpType::CreateStructure(
                 DataStructureType::try_from(leftover)?,
@@ -78,12 +82,12 @@ mod tests {
 
     #[test]
     fn test_tokenize_request() {
-        let request = "create ctree".to_string();
+        let request = "create ctree my_tree".to_string();
         let result = RequestToken::from_string(request);
         assert!(result.is_ok());
         match result.unwrap() {
-            RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree)) => {
-                ()
+            RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree{name})) => {
+                assert_eq!(name, "my_tree".to_string())
             }
             _ => panic!("unexpected result"),
         }
