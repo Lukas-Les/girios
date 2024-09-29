@@ -1,6 +1,9 @@
-use common::dsa::char_tree::CharTree;
+use std::sync::Arc;
 
-use crate::platform;
+use common::dsa::char_tree::CharTree;
+use tokio::sync::RwLock;
+
+use crate::platform::{self, Platform};
 
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
@@ -42,23 +45,6 @@ pub enum PlatformRwOpType {
     Invalid,
 }
 
-impl PlatformRwOpType {
-    fn execute(&self, data_structures: &mut platform::DataStructures) {
-        match self {
-            PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name }) => {
-                let new_ctree = CharTree::new(name.clone());
-                data_structures.insert_ctree(new_ctree);
-            }
-            PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name }) => {
-                // Remove CharTree from DataStructures
-                data_structures.remove_ctree(name.clone());
-            }
-            _ => return,
-        }
-    }
-}
-
-
 #[derive(Debug)]
 pub enum RequestToken {
     PlatformRwOp(PlatformRwOpType),
@@ -66,6 +52,24 @@ pub enum RequestToken {
 }
 
 impl RequestToken {
+    pub async fn execute(&self, platform: &Arc<RwLock<Platform>>) -> Result<(), String> {
+        match self {
+            RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name })) => {
+                let platforn_lock = platform.write().await;
+                let data_structures_lock = platforn_lock.data_structures.write().await;
+                data_structures_lock.insert_ctree(CharTree::new(name.clone())).await;
+                Ok(())
+            }
+            RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name })) => {
+                let platforn_lock = platform.write().await;
+                let data_structures_lock = platforn_lock.data_structures.write().await;
+                data_structures_lock.remove_ctree(name).await;
+                Ok(())
+            }
+            _ => Err("Invalid request".to_string()),
+        }
+    }
+
     fn from_string(value: String) -> Result<Self, RequestParserError> {
         let (root_command, leftover_str) = match value.split_once(" ") {
             Some(result) => result,
