@@ -1,3 +1,7 @@
+use common::dsa::char_tree::CharTree;
+
+use crate::platform;
+
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
     InvalidRequest,
@@ -10,8 +14,9 @@ impl RequestParserError {
     }
 }
 
-enum DataStructureType {
-    Ctree{name: String},
+#[derive(Debug)]
+pub enum DataStructureType {
+    Ctree { name: String },
 }
 
 impl TryFrom<String> for DataStructureType {
@@ -20,22 +25,43 @@ impl TryFrom<String> for DataStructureType {
         let (structure_type, structure_name) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
-        };        
+        };
         match structure_type {
-            "ctree" => Ok(DataStructureType::Ctree { name: structure_name.to_string() }),
+            "ctree" => Ok(DataStructureType::Ctree {
+                name: structure_name.to_string(),
+            }),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
 }
 
-enum PlatformOpType {
+#[derive(Debug)]
+pub enum PlatformRwOpType {
     CreateStructure(DataStructureType),
     DestroyStructure(DataStructureType),
     Invalid,
 }
 
+impl PlatformRwOpType {
+    fn execute(&self, data_structures: &mut platform::DataStructures) {
+        match self {
+            PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name }) => {
+                let new_ctree = CharTree::new(name.clone());
+                data_structures.insert_ctree(new_ctree);
+            }
+            PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name }) => {
+                // Remove CharTree from DataStructures
+                data_structures.remove_ctree(name.clone());
+            }
+            _ => return,
+        }
+    }
+}
+
+
+#[derive(Debug)]
 pub enum RequestToken {
-    PlatformOp(PlatformOpType),
+    PlatformRwOp(PlatformRwOpType),
     DsOp(String),
 }
 
@@ -47,12 +73,12 @@ impl RequestToken {
         };
         let leftover = leftover_str.to_string();
         match root_command {
-            "create" => Ok(RequestToken::PlatformOp(PlatformOpType::CreateStructure(
-                DataStructureType::try_from(leftover)?,
-            ))),
-            "destroy" => Ok(RequestToken::PlatformOp(PlatformOpType::DestroyStructure(
-                DataStructureType::try_from(leftover)?,
-            ))),
+            "create" => Ok(RequestToken::PlatformRwOp(
+                PlatformRwOpType::CreateStructure(DataStructureType::try_from(leftover)?),
+            )),
+            "destroy" => Ok(RequestToken::PlatformRwOp(
+                PlatformRwOpType::DestroyStructure(DataStructureType::try_from(leftover)?),
+            )),
             _ => Ok(RequestToken::DsOp(leftover.to_string())),
         }
     }
@@ -86,7 +112,9 @@ mod tests {
         let result = RequestToken::from_string(request);
         assert!(result.is_ok());
         match result.unwrap() {
-            RequestToken::PlatformOp(PlatformOpType::CreateStructure(DataStructureType::Ctree{name})) => {
+            RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(
+                DataStructureType::Ctree { name },
+            )) => {
                 assert_eq!(name, "my_tree".to_string())
             }
             _ => panic!("unexpected result"),

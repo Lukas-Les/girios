@@ -1,22 +1,25 @@
-use std::{collections::HashMap, sync::{Arc, RwLock}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use common::dsa::char_tree::CharTree;
 
 
 pub struct Platform {
-    data_structures: DataStructures,
+    pub data_structures: DataStructures,
 }
 
 impl Platform {
     pub fn new() -> Self {
-        Platform { data_structures: DataStructures::new()}
+        Platform {
+            data_structures: DataStructures::new(),
+        }
     }
 }
 
-
-
 pub struct DataStructures {
-    ctrees: HashMap<String, Arc<RwLock<CharTree>>>
+    ctrees: HashMap<String, Arc<RwLock<CharTree>>>,
 }
 
 impl DataStructures {
@@ -27,7 +30,8 @@ impl DataStructures {
     }
 
     pub fn insert_ctree(&mut self, tree: CharTree) {
-        self.ctrees.insert(tree.name.clone(), Arc::new(RwLock::new(tree)));
+        self.ctrees
+            .insert(tree.name.clone(), Arc::new(RwLock::new(tree)));
     }
 
     pub fn remove_ctree(&mut self, name: String) {
@@ -35,14 +39,12 @@ impl DataStructures {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common::dsa::char_tree::CharTree;
     use std::sync::Arc;
     use std::sync::RwLock;
-    use common::dsa::char_tree::CharTree;
-
 
     #[test]
     fn test_insert_ctree() {
