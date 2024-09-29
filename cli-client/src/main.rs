@@ -3,14 +3,18 @@ mod errors;
 
 use std::time::Duration;
 
-use std::env;
-use std::io::{self, Write, BufRead, BufReader};
-use std::net::TcpStream;
 use cfg::Config;
+use std::env;
+use std::io::{self, BufRead, BufReader, Write};
+use std::net::TcpStream;
 
 fn main() -> io::Result<()> {
     // let args: Vec<String> = env::args().collect();
-    let args = vec!["/mnt/e/github/girios".to_string(), "--host".to_string(), "127.0.0.1:42069".to_string()];
+    let args = vec![
+        "/mnt/e/github/girios".to_string(),
+        "--host".to_string(),
+        "127.0.0.1:42069".to_string(),
+    ];
     let cfg: Config = match Config::try_from(args) {
         Ok(config) => config,
         Err(e) => {

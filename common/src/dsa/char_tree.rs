@@ -13,8 +13,7 @@
 //! tree.deep_delete("mypath");
 //! assert_eq!(tree.get("mypath"), None);
 //! ```
-//! 
-
+//!
 
 #[derive(Debug)]
 struct Node {
@@ -42,7 +41,6 @@ impl Node {
     }
 }
 
-
 /// The Tree struct allows you to store &str values on a provided char path;
 /// Use insert(path: &str, value: &str) to insert value and
 /// get(path: &str) to retireve it.
@@ -54,7 +52,10 @@ pub struct CharTree {
 
 impl CharTree {
     pub fn new(name: String) -> Self {
-        CharTree { root: Vec::new() , name: name}
+        CharTree {
+            root: Vec::new(),
+            name: name,
+        }
     }
 
     fn consume_path(path: &mut &str) -> char {

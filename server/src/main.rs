@@ -1,45 +1,80 @@
+mod fsm;
+mod platform;
 mod server;
 
-use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use std::sync::Arc;
 
-use common::dsa::char_tree::CharTree;
-use server::requests_handler::handle_request;
+use tokio::io::{AsyncReadExt, AsyncWriteExt}; 
+use tokio::net::TcpListener;
+use tokio::sync::RwLock;
+
+use server::requests::request_token::RequestToken;
+
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
-    // Create a shared, thread-safe instance of Tree
-    let tree = Arc::new(Mutex::new(CharTree::new("main".to_string())));
+    let platform = Arc::new(RwLock::new(platform::Platform::new()));
+    run_server(platform).await
+}
 
-    // Start listening for incoming TCP connections
-    let listener = TcpListener::bind("127.0.0.1:42069").await?;
-    println!("Server running on localhost:42069");
+async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Result<()> {
+    const HOST: &str = "127.0.0.1";
+    const PORT: &str = "42069";
+    let listener = TcpListener::bind(format!("{}:{}", HOST, PORT)).await?;
+    println!("Server listening on {}:{}", HOST, PORT);
 
     loop {
-        let (mut socket, _) = listener.accept().await?;
-        let tree = Arc::clone(&tree);
-
-        // Spawn a new task to handle each connection
-        tokio::spawn(async move {
-            let mut buffer = [0; 1024];
-
-            loop {
-                // Read data from the socket
-                let n = match socket.read(&mut buffer).await {
-                    Ok(n) if n == 0 => return, // Connection closed
-                    Ok(n) => n,
-                    Err(_) => return,
-                };
-
-                let request = String::from_utf8_lossy(&buffer[..n]);
-                println!("request: {}", &request);
-                let result = handle_request(&tree, &request).await;
-                // Write the response back to the socket
-                if let Err(_) = socket.write_all(&result.as_bytes()).await {
-                    return;
-                }
+        let (socket, _) = match listener.accept().await {
+            Ok(result) => result,
+            Err(e) => {
+                eprintln!("Error accepting connection: {:?}", e);
+                continue;
             }
+        };
+
+        match socket.readable().await {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Error reading from socket: {:?}", e);
+                continue;
+            }
+        }
+
+        let platform_ref = Arc::clone(&platform);
+
+        tokio::spawn(async move {
+            if let Err(e) = handle_connection(socket, platform_ref).await {
+                eprintln!("Error handling connection: {:?}", e);
+            }        
         });
+    }
+}
+
+async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Result<()> {
+    let mut buffer = [0; 1024];
+
+    loop {
+        // Read data from the socket
+        let n = match socket.read(&mut buffer).await {
+            Ok(n) if n == 0 => return Ok(()), // Connection closed
+            Ok(n) => n,
+            Err(e) => return Err(e),
+        };
+
+        // Attempt to parse the request
+        let request_token = match RequestToken::try_from(&buffer[..n]) {
+            Ok(token) => token,
+            Err(_) => {
+                socket.write_all(b"Invalid request\n").await?;
+                continue;
+            }
+        };
+        dbg!(&request_token);
+
+        // // Process the request
+        // if let Err(e) = process_request(request_token, &platform).await {
+        //     eprintln!("Error processing request: {:?}", e);
+        //     socket.write_all(b"Request processing failed\n").await?;
+        // }
     }
 }
