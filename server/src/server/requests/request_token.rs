@@ -45,12 +45,74 @@ pub enum PlatformRwOpType {
     Invalid,
 }
 
+
+#[derive(Debug)]
+pub enum CtreeOpType {
+    Insert{ target: String, key: String, value: String },
+    Remove { target: String, key: String },
+    Get { target: String, key: String },
+    Hit { target: String, key: String },
+    Scan { target: String },
+}
+
+impl TryFrom<String> for CtreeOpType {
+    type Error = RequestParserError;
+
+    fn try_from(value: String) -> Result<Self, RequestParserError> {
+        let (target, leftover) = match value.split_once(" ") {
+            Some(result) => result,
+            None => return Err(RequestParserError::InvalidRequest),
+        };
+        let (operation, key_value) = match leftover.split_once(" ") {
+            Some(result) => result,
+            None => return Err(RequestParserError::InvalidRequest),
+        };
+        match operation {
+            "insert" => {
+                let (key, value) = match key_value.split_once(" ") {
+                    Some(result) => result,
+                    None => return Err(RequestParserError::InvalidRequest),
+                };
+                Ok(CtreeOpType::Insert {
+                    target: target.to_string(),
+                    key: key.to_string(),
+                    value: value.to_string(),
+                })
+            }
+            "remove" => {
+                Ok(CtreeOpType::Remove {
+                    target: target.to_string(),
+                    key: key_value.to_string(),
+                })
+            }
+            "get" => {
+                Ok(CtreeOpType::Get {
+                    target: target.to_string(),
+                    key: key_value.to_string(),
+                })
+            }
+            "hit" => {
+                Ok(CtreeOpType::Hit {
+                    target: target.to_string(),
+                    key: key_value.to_string(),
+                })
+            }
+            "scan" => {
+                Ok(CtreeOpType::Scan {
+                    target: target.to_string(),
+                })
+            }
+            _ => Err(RequestParserError::InvalidRequest),
+        }
+    }
+}
+
+
 #[derive(Debug)]
 pub enum RequestToken {
     PlatformRwOp(PlatformRwOpType),
-    DsOp(String),
+    CtreeOp(CtreeOpType),
 }
-
 impl RequestToken {
     pub async fn execute(&self, platform: &Arc<RwLock<Platform>>) -> Result<(), String> {
         match self {
@@ -83,7 +145,8 @@ impl RequestToken {
             "destroy" => Ok(RequestToken::PlatformRwOp(
                 PlatformRwOpType::DestroyStructure(DataStructureType::try_from(leftover)?),
             )),
-            _ => Ok(RequestToken::DsOp(leftover.to_string())),
+            "ctree" => Ok(RequestToken::CtreeOp(CtreeOpType::try_from(leftover)?)),
+            _ => Err(RequestParserError::InvalidRequest),
         }
     }
 }
