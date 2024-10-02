@@ -107,6 +107,10 @@ impl TryFrom<String> for CtreeOpType {
     }
 }
 
+pub enum ExecutionResult {
+    Success(String),
+    Failure(String),
+}
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -114,24 +118,6 @@ pub enum RequestToken {
     CtreeOp(CtreeOpType),
 }
 impl RequestToken {
-    pub async fn execute(&self, platform: &Arc<RwLock<Platform>>) -> Result<(), String> {
-        match self {
-            RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name })) => {
-                let platforn_lock = platform.write().await;
-                let data_structures_lock = platforn_lock.data_structures.write().await;
-                data_structures_lock.insert_ctree(CharTree::new(name.clone())).await;
-                Ok(())
-            }
-            RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name })) => {
-                let platforn_lock = platform.write().await;
-                let data_structures_lock = platforn_lock.data_structures.write().await;
-                data_structures_lock.remove_ctree(name).await;
-                Ok(())
-            }
-            _ => Err("Invalid request".to_string()),
-        }
-    }
-
     fn from_string(value: String) -> Result<Self, RequestParserError> {
         let (root_command, leftover_str) = match value.split_once(" ") {
             Some(result) => result,
@@ -165,6 +151,7 @@ impl TryFrom<&[u8]> for RequestToken {
     fn try_from(value: &[u8]) -> Result<Self, RequestParserError> {
         let request_str = std::str::from_utf8(value)
             .map_err(|e| RequestParserError::from_request(e.to_string()))?;
+        let request_str = request_str.trim();
         Self::from_string(request_str.to_string())
     }
 }

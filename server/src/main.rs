@@ -52,7 +52,7 @@ async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Res
 
 async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Result<()> {
     let mut buffer = [0; 1024];
-
+    let mut fsm = fsm::FSM::new();
     loop {
         // Read data from the socket
         let n = match socket.read(&mut buffer).await {
@@ -69,12 +69,6 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLo
                 continue;
             }
         };
-        dbg!(&request_token);
-
-        // // Process the request
-        // if let Err(e) = process_request(request_token, &platform).await {
-        //     eprintln!("Error processing request: {:?}", e);
-        //     socket.write_all(b"Request processing failed\n").await?;
-        // }
+        fsm.process_event(fsm::Event::IncomingToken(request_token), &platform).await;
     }
 }
