@@ -107,10 +107,6 @@ impl TryFrom<String> for CtreeOpType {
     }
 }
 
-pub enum ExecutionResult {
-    Success(String),
-    Failure(String),
-}
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -155,6 +151,100 @@ impl TryFrom<&[u8]> for RequestToken {
         Self::from_string(request_str.to_string())
     }
 }
+
+pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>) -> Result<String, String> {
+    println!("Processing token: {:?}", token);
+    match token {
+        RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name })) => {
+            println!("Creating ctree");
+            let platforn_lock = platform.write().await;
+            let data_structures_lock = platforn_lock.data_structures.write().await;
+            data_structures_lock.insert_ctree(CharTree::new(name.clone())).await;
+            Ok(format!("Ctree {} created", name))
+        }
+        RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name })) => {
+            println!("Removing ctree");
+            let platforn_lock = platform.write().await;
+            let data_structures_lock = platforn_lock.data_structures.write().await;
+            data_structures_lock.remove_ctree(&name).await;
+            Ok(format!("Ctree {} removed", name))
+        }
+        RequestToken::CtreeOp(CtreeOpType::Insert { target, key, value }) => {
+            println!("Insert request");
+            let platforn_lock = platform.write().await;
+            let data_structures_lock = platforn_lock.data_structures.write().await;
+            let mut ctree = data_structures_lock.get_ctree(&target).await;
+            if ctree.is_none() {
+                return Err("Ctree not found".to_string());
+            }
+            let ctree_lock = ctree.unwrap();
+            let mut ctree_write = ctree_lock.write().await;
+            ctree_write.insert(&key, &value);
+            Ok(format!("Key {} inserted", key))
+        }
+        RequestToken::CtreeOp(CtreeOpType::Remove { target, key }) => {
+            println!("Remove request");
+            let platforn_lock = platform.write().await;
+            let data_structures_lock = platforn_lock.data_structures.write().await;
+            let mut ctree = match data_structures_lock.get_ctree(&target).await {
+                Some(ctree) => ctree,
+                None => return Err("Ctree not found".to_string()),
+            };
+            let mut ctree_write = ctree.write().await;
+            ctree_write.deep_delete(&key);
+            Ok(format!("Key {} removed", key))
+        }
+        RequestToken::CtreeOp(CtreeOpType::Get { target, key }) => {
+            println!("Get request");
+            let platforn_lock = platform.read().await;
+            let data_structures_lock = platforn_lock.data_structures.read().await;
+            let ctree = data_structures_lock.get_ctree(&target).await;
+            if ctree.is_none() {
+                println!("Ctree not found");
+                return Err("Ctree not found".to_string());
+            }
+            dbg!(&ctree);
+            let ctree_lock = ctree.unwrap();
+            let ctree_read = ctree_lock.read().await;
+            let value = ctree_read.get(&key);
+            println!("Value: {:?}", value);
+            match value {
+                Some(value) => Ok(value.clone()),
+                None => Err("Key not found".to_string()),
+            }
+        }
+        RequestToken::CtreeOp(CtreeOpType::Hit { target, key }) => {
+            println!("Hit request");
+            let platforn_lock = platform.read().await;
+            let data_structures_lock = platforn_lock.data_structures.read().await;
+            let ctree = data_structures_lock.get_ctree(&target).await;
+            if ctree.is_none() {
+                return Err("Ctree not found".to_string());
+            }
+            let ctree_lock = ctree.unwrap();
+            let ctree_read = ctree_lock.read().await;
+            ctree_read.hit(&key);
+            Ok("Key hit".to_string())
+        }
+        RequestToken::CtreeOp(CtreeOpType::Scan { target }) => {
+            println!("Scan request");
+            let platforn_lock = platform.read().await;
+            let data_structures_lock = platforn_lock.data_structures.read().await;
+            let ctree = data_structures_lock.get_ctree(&target).await;
+            if ctree.is_none() {
+                return Err("Ctree not found".to_string());
+            }
+            let ctree_lock = ctree.unwrap();
+            let ctree_read = ctree_lock.read().await;
+            let keys = ctree_read.scan();
+            Ok(format!("{:?}", keys))
+        }
+
+        _ => Err("Invalid request".to_string()),
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {

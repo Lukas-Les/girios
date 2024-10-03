@@ -1,14 +1,14 @@
-mod fsm;
 mod platform;
 mod server;
 
+use std::os::unix::process;
 use std::sync::Arc;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt}; 
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
-use server::requests::request_token::RequestToken;
+use server::requests::request_token::{RequestToken, process_token};
 
 
 #[tokio::main]
@@ -52,7 +52,6 @@ async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Res
 
 async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Result<()> {
     let mut buffer = [0; 1024];
-    let mut fsm = fsm::FSM::new();
     loop {
         // Read data from the socket
         let n = match socket.read(&mut buffer).await {
@@ -65,10 +64,23 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLo
         let request_token = match RequestToken::try_from(&buffer[..n]) {
             Ok(token) => token,
             Err(_) => {
-                socket.write_all(b"Invalid request\n").await?;
+                socket.write_all(b"Invalid request\n\n").await?;
                 continue;
             }
         };
-        fsm.process_event(fsm::Event::IncomingToken(request_token), &platform).await;
+        match process_token(request_token, &platform).await {
+            Ok(response) => {
+                println!("Response: {}", &response);
+                socket.write_all(b"Success\n").await?;
+                socket.flush().await?;
+                socket.write_all(response.as_bytes()).await?;
+                socket.write_all(b"\n\n").await?;
+                socket.flush().await?;
+            }
+            Err(e) => {
+                socket.write_all(format!("Error processing request: {}\n\n", e).as_bytes()).await?;
+            }
+            
+        }
     }
 }
