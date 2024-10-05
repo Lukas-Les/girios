@@ -1,14 +1,13 @@
 mod platform;
-mod server;
+mod request_token;
 
-use std::os::unix::process;
 use std::sync::Arc;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt}; 
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
-use server::requests::request_token::{RequestToken, process_token};
+use request_token::{RequestToken, process_token};
 
 
 #[tokio::main]
@@ -31,14 +30,6 @@ async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Res
                 continue;
             }
         };
-
-        match socket.readable().await {
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Error reading from socket: {:?}", e);
-                continue;
-            }
-        }
 
         let platform_ref = Arc::clone(&platform);
 
@@ -71,11 +62,19 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLo
         match process_token(request_token, &platform).await {
             Ok(response) => {
                 println!("Response: {}", &response);
-                socket.write_all(b"Success\n").await?;
-                socket.flush().await?;
-                socket.write_all(response.as_bytes()).await?;
-                socket.write_all(b"\n\n").await?;
-                socket.flush().await?;
+                match socket.write_all(response.as_bytes()).await {
+                    Ok(_) => {
+                        if let Err(e) = socket.write_all(b"\n\n").await {
+                            eprintln!("Failed to write delimiter: {}", e);
+                        }
+                        if let Err(e) = socket.flush().await {
+                            eprintln!("Failed to flush the socket: {}", e);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to write response: {}", e);
+                    }
+                }
             }
             Err(e) => {
                 socket.write_all(format!("Error processing request: {}\n\n", e).as_bytes()).await?;

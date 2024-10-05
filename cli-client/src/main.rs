@@ -22,6 +22,8 @@ fn main() -> io::Result<()> {
 
     // Connect to the server
     let mut stream = TcpStream::connect(&cfg.host)?;
+    let stdin = io::stdin();
+    let mut reader = BufReader::new(stream.try_clone()?);
     println!(r" ______ _________ ______  _________ _____    ______  ");
     println!(r"(  ___ |\__   __/(  __  ) \__   __/( ____ \ ( ______)");
     println!(r"| (        ) (   | (  ) |    ) (   | (   | || (      ");
@@ -40,9 +42,6 @@ fn main() -> io::Result<()> {
     println!("|\tscan                    |");
     println!("|\tdelete <path>           |");
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
-    let stdin = io::stdin();
-    let mut reader = BufReader::new(stream.try_clone()?);
 
     loop {
         print!("> ");

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use common::dsa::char_tree::CharTree;
 use tokio::sync::RwLock;
 
-use crate::platform::{self, Platform};
+use crate::platform::Platform;
 
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
@@ -67,6 +67,7 @@ impl TryFrom<String> for CtreeOpType {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
         };
+        println!("Operation: {}, key_value: {}", operation, key_value);
         match operation {
             "insert" => {
                 let (key, value) = match key_value.split_once(" ") {
