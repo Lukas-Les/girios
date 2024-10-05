@@ -5,6 +5,7 @@ use std::{
 use tokio::sync::RwLock;
 use common::dsa::char_tree::CharTree;
 
+#[derive(Debug)]
 pub struct Platform {
     pub data_structures: Arc<RwLock<DataStructures>>,
 }
@@ -17,6 +18,7 @@ impl Platform {
     }
 }
 
+#[derive(Debug)]
 pub struct DataStructures {
     ctrees: RwLock<HashMap<String, Arc<RwLock<CharTree>>>>, // Wrap each CharTree in Arc and RwLock
 }

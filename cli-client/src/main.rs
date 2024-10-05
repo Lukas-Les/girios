@@ -1,10 +1,7 @@
 mod cfg;
 mod errors;
 
-use std::time::Duration;
-
 use cfg::Config;
-use std::env;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::TcpStream;
 
@@ -25,6 +22,8 @@ fn main() -> io::Result<()> {
 
     // Connect to the server
     let mut stream = TcpStream::connect(&cfg.host)?;
+    let stdin = io::stdin();
+    let mut reader = BufReader::new(stream.try_clone()?);
     println!(r" ______ _________ ______  _________ _____    ______  ");
     println!(r"(  ___ |\__   __/(  __  ) \__   __/( ____ \ ( ______)");
     println!(r"| (        ) (   | (  ) |    ) (   | (   | || (      ");
@@ -44,9 +43,6 @@ fn main() -> io::Result<()> {
     println!("|\tdelete <path>           |");
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-    let stdin = io::stdin();
-    let mut reader = BufReader::new(stream.try_clone()?);
-
     loop {
         print!("> ");
         io::stdout().flush()?;
@@ -64,29 +60,34 @@ fn main() -> io::Result<()> {
             continue;
         }
 
+        // Send input to the server
         stream.write_all(input.as_bytes())?;
-        // stream.write_all(b"\n")?;
+        stream.write_all(b"\n")?; // Ensures the input is terminated correctly
         stream.flush()?;
 
-        // Set a short timeout for reading
-        stream.set_read_timeout(Some(Duration::from_millis(100)))?;
-
         let mut response = String::new();
+
+        // Read the response until the end delimiter ("\n\n")
         loop {
-            match reader.read_line(&mut response) {
-                Ok(0) | Err(_) => break, // End of stream or timeout
+            let mut line = String::new();
+            match reader.read_line(&mut line) {
+                Ok(0) => break, // End of stream
                 Ok(_) => {
-                    print!("{}", response);
-                    io::stdout().flush()?;
-                    response.clear();
+                    response.push_str(&line);
+                    if response.ends_with("\n\n") {
+                        break; // Response is complete
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error reading from server: {:?}", e);
+                    break;
                 }
             }
         }
 
-        // Reset the timeout to None (blocking mode)
-        stream.set_read_timeout(None)?;
-
-        println!(); // Ensure we're on a new line before the next prompt
+        // Print the full response
+        println!("{}", response);
+        io::stdout().flush()?;
     }
 
     Ok(())
