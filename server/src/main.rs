@@ -3,7 +3,7 @@ mod request_token;
 
 use std::sync::Arc;
 
-use log::{debug, error, info, log_enabled, Level};
+use log::{debug, error, info, warn};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
@@ -50,38 +50,46 @@ async fn handle_connection(
     loop {
         // Read data from the socket
         let n = match socket.read(&mut buffer).await {
-            Ok(n) if n == 0 => return Ok(()), // Connection closed
+            Ok(0) => {
+                info!("Connection closed by client.");
+                return Ok(()); // Connection closed gracefully
+            },
             Ok(n) => n,
-            Err(e) => return Err(e),
+            Err(e) => {
+                error!("Failed to read from socket: {}", e);
+                return Err(e);
+            },
         };
 
         // Attempt to parse the request
         let request_token = match RequestToken::try_from(&buffer[..n]) {
             Ok(token) => token,
             Err(_) => {
+                warn!("Received invalid request");
                 socket.write_all(b"Invalid request\n\n").await?;
-                continue;
+                continue; // Continue the loop to read next request
             }
         };
-        info!("Received request: {:?}", request_token);
+        debug!("Parsed operation: {:?}", request_token);
         match process_token(request_token, &platform).await {
-            Ok(response) => match socket.write_all(response.as_bytes()).await {
-                Ok(_) => {
-                    if let Err(e) = socket.write_all(b"\n\n").await {
-                        error!("Failed to write response: {}", e);
-                    }
-                    if let Err(e) = socket.flush().await {
-                        error!("Failed to flush socket: {}", e);
-                    }
-                }
-                Err(e) => {
+            Ok(response) => {
+                if let Err(e) = socket.write_all(response.as_bytes()).await {
                     error!("Failed to write response: {}", e);
+                    return Err(e);
                 }
-            },
+                if let Err(e) = socket.write_all(b"\n\n").await {
+                    error!("Failed to write response delimiter: {}", e);
+                    return Err(e);
+                }
+                if let Err(e) = socket.flush().await {
+                    error!("Failed to flush the socket: {}", e);
+                    return Err(e);
+                }
+            }
             Err(e) => {
-                socket
-                    .write_all(format!("Error processing request: {}\n\n", e).as_bytes())
-                    .await?;
+                let error_message = format!("Error processing request: {}\n\n", e);
+                error!("Processing error: {}", e);
+                socket.write_all(error_message.as_bytes()).await?;
             }
         }
     }

@@ -19,11 +19,6 @@ fn main() -> io::Result<()> {
             return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
         }
     };
-
-    // Connect to the server
-    let mut stream = TcpStream::connect(&cfg.host)?;
-    let stdin = io::stdin();
-    let mut reader = BufReader::new(stream.try_clone()?);
     println!(r" ______ _________ ______  _________ _____    ______  ");
     println!(r"(  ___ |\__   __/(  __  ) \__   __/( ____ \ ( ______)");
     println!(r"| (        ) (   | (  ) |    ) (   | (   | || (      ");
@@ -43,6 +38,10 @@ fn main() -> io::Result<()> {
     println!("|\tdelete <path>           |");
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
+    // Connect to the server
+    let mut stream = TcpStream::connect(&cfg.host)?;
+    let stdin = io::stdin();
+    let mut reader = BufReader::new(stream.try_clone()?);
     loop {
         print!("> ");
         io::stdout().flush()?;
@@ -62,8 +61,7 @@ fn main() -> io::Result<()> {
 
         // Send input to the server
         stream.write_all(input.as_bytes())?;
-        stream.write_all(b"\n")?; // Ensures the input is terminated correctly
-        stream.flush()?;
+        stream.flush()?; // Make sure data is sent immediately
 
         let mut response = String::new();
 
@@ -71,7 +69,10 @@ fn main() -> io::Result<()> {
         loop {
             let mut line = String::new();
             match reader.read_line(&mut line) {
-                Ok(0) => break, // End of stream
+                Ok(0) => {
+                    eprintln!("Server closed the connection.");
+                    return Ok(()); // Graceful server shutdown
+                }
                 Ok(_) => {
                     response.push_str(&line);
                     if response.ends_with("\n\n") {
@@ -80,14 +81,13 @@ fn main() -> io::Result<()> {
                 }
                 Err(e) => {
                     eprintln!("Error reading from server: {:?}", e);
-                    break;
+                    return Err(e);
                 }
             }
         }
 
         // Print the full response
-        println!("{}", response);
-        io::stdout().flush()?;
+        println!("{}", response.trim_end());
     }
 
     Ok(())

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use common::dsa::char_tree::CharTree;
+use log::debug;
 use tokio::sync::RwLock;
 
 use crate::platform::Platform;
@@ -73,6 +74,11 @@ impl TryFrom<String> for CtreeOpType {
     type Error = RequestParserError;
 
     fn try_from(value: String) -> Result<Self, RequestParserError> {
+        if value.is_empty() {
+            debug!("CtreeOpType from string: empty");
+            return Err(RequestParserError::InvalidRequest);
+        }
+        debug!("CtreeOpType from string: {}EOL", &value);
         let (target, leftover) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
@@ -121,6 +127,7 @@ pub enum RequestToken {
 }
 impl RequestToken {
     fn from_string(value: String) -> Result<Self, RequestParserError> {
+        debug!("Received input: {}", value);
         let (root_command, leftover_str) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
