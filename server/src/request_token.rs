@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use common::dsa::char_tree::CharTree;
+use log::{debug, info};
 use tokio::sync::RwLock;
 
 use crate::platform::Platform;
@@ -45,20 +46,39 @@ pub enum PlatformRwOpType {
     Invalid,
 }
 
-
 #[derive(Debug)]
 pub enum CtreeOpType {
-    Insert{ target: String, key: String, value: String },
-    Remove { target: String, key: String },
-    Get { target: String, key: String },
-    Hit { target: String, key: String },
-    Scan { target: String },
+    Insert {
+        target: String,
+        key: String,
+        value: String,
+    },
+    Remove {
+        target: String,
+        key: String,
+    },
+    Get {
+        target: String,
+        key: String,
+    },
+    Hit {
+        target: String,
+        key: String,
+    },
+    Scan {
+        target: String,
+    },
 }
 
 impl TryFrom<String> for CtreeOpType {
     type Error = RequestParserError;
 
     fn try_from(value: String) -> Result<Self, RequestParserError> {
+        if value.is_empty() {
+            debug!("CtreeOpType from string: empty");
+            return Err(RequestParserError::InvalidRequest);
+        }
+        debug!("CtreeOpType from string: {}EOL", &value);
         let (target, leftover) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
@@ -80,34 +100,25 @@ impl TryFrom<String> for CtreeOpType {
                     value: value.to_string(),
                 })
             }
-            "remove" => {
-                Ok(CtreeOpType::Remove {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "get" => {
-                Ok(CtreeOpType::Get {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "hit" => {
-                Ok(CtreeOpType::Hit {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "scan" => {
-                Ok(CtreeOpType::Scan {
-                    target: target.to_string(),
-                })
-            }
+            "remove" => Ok(CtreeOpType::Remove {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "get" => Ok(CtreeOpType::Get {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "hit" => Ok(CtreeOpType::Hit {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "scan" => Ok(CtreeOpType::Scan {
+                target: target.to_string(),
+            }),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -116,6 +127,7 @@ pub enum RequestToken {
 }
 impl RequestToken {
     fn from_string(value: String) -> Result<Self, RequestParserError> {
+        debug!("Received input: {}", value);
         let (root_command, leftover_str) = match value.split_once(" ") {
             Some(result) => result,
             None => return Err(RequestParserError::InvalidRequest),
@@ -153,25 +165,31 @@ impl TryFrom<&[u8]> for RequestToken {
     }
 }
 
-pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>) -> Result<String, String> {
+pub async fn process_token(
+    token: RequestToken,
+    platform: &Arc<RwLock<Platform>>,
+) -> Result<String, String> {
     println!("Processing token: {:?}", token);
     match token {
-        RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name })) => {
-            println!("Creating ctree");
+        RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(
+            DataStructureType::Ctree { name },
+        )) => {
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
-            data_structures_lock.insert_ctree(CharTree::new(name.clone())).await;
+            data_structures_lock
+                .insert_ctree(CharTree::new(name.clone()))
+                .await;
             Ok(format!("Ctree {} created", name))
         }
-        RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name })) => {
-            println!("Removing ctree");
+        RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(
+            DataStructureType::Ctree { name },
+        )) => {
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
             data_structures_lock.remove_ctree(&name).await;
             Ok(format!("Ctree {} removed", name))
         }
         RequestToken::CtreeOp(CtreeOpType::Insert { target, key, value }) => {
-            println!("Insert request");
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
             let mut ctree = data_structures_lock.get_ctree(&target).await;
@@ -184,7 +202,6 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
             Ok(format!("Key {} inserted", key))
         }
         RequestToken::CtreeOp(CtreeOpType::Remove { target, key }) => {
-            println!("Remove request");
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
             let mut ctree = match data_structures_lock.get_ctree(&target).await {
@@ -196,12 +213,11 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
             Ok(format!("Key {} removed", key))
         }
         RequestToken::CtreeOp(CtreeOpType::Get { target, key }) => {
-            println!("Get request");
             let platforn_lock = platform.read().await;
             let data_structures_lock = platforn_lock.data_structures.read().await;
             let ctree = data_structures_lock.get_ctree(&target).await;
             if ctree.is_none() {
-                println!("Ctree not found");
+                info!("Ctree {} not found", &target);
                 return Err("Ctree not found".to_string());
             }
             dbg!(&ctree);
@@ -215,7 +231,6 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
             }
         }
         RequestToken::CtreeOp(CtreeOpType::Hit { target, key }) => {
-            println!("Hit request");
             let platforn_lock = platform.read().await;
             let data_structures_lock = platforn_lock.data_structures.read().await;
             let ctree = data_structures_lock.get_ctree(&target).await;
@@ -228,7 +243,6 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
             Ok("Key hit".to_string())
         }
         RequestToken::CtreeOp(CtreeOpType::Scan { target }) => {
-            println!("Scan request");
             let platforn_lock = platform.read().await;
             let data_structures_lock = platforn_lock.data_structures.read().await;
             let ctree = data_structures_lock.get_ctree(&target).await;
@@ -244,8 +258,6 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
         _ => Err("Invalid request".to_string()),
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
