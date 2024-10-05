@@ -30,13 +30,15 @@ fn main() -> io::Result<()> {
     println!();
     println!("Connected to the server at {}", &cfg.host);
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    println!("| Commands:                \t|");
-    println!("|\tinsert <path> <value>   |");
-    println!("|\tget <path>              |");
-    println!("|\thit <path>              |");
-    println!("|\tscan                    |");
-    println!("|\tdelete <path>           |");
+    println!("Common Commands:");
+    println!("\tcreate <type> <name>");
+    println!("\tdestroy <type> <name>");
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    println!("Char Tree Commands:");
+    println!("\tctree <name> insert <key> <value>");
+    println!("\tctree <name> scan");
+    println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    
 
     // Connect to the server
     let mut stream = TcpStream::connect(&cfg.host)?;
