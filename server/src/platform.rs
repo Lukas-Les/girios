@@ -1,9 +1,6 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
-use tokio::sync::RwLock;
 use common::dsa::char_tree::CharTree;
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::RwLock;
 
 #[derive(Debug)]
 pub struct Platform {

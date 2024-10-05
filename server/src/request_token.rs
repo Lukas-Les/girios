@@ -45,14 +45,28 @@ pub enum PlatformRwOpType {
     Invalid,
 }
 
-
 #[derive(Debug)]
 pub enum CtreeOpType {
-    Insert{ target: String, key: String, value: String },
-    Remove { target: String, key: String },
-    Get { target: String, key: String },
-    Hit { target: String, key: String },
-    Scan { target: String },
+    Insert {
+        target: String,
+        key: String,
+        value: String,
+    },
+    Remove {
+        target: String,
+        key: String,
+    },
+    Get {
+        target: String,
+        key: String,
+    },
+    Hit {
+        target: String,
+        key: String,
+    },
+    Scan {
+        target: String,
+    },
 }
 
 impl TryFrom<String> for CtreeOpType {
@@ -80,34 +94,25 @@ impl TryFrom<String> for CtreeOpType {
                     value: value.to_string(),
                 })
             }
-            "remove" => {
-                Ok(CtreeOpType::Remove {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "get" => {
-                Ok(CtreeOpType::Get {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "hit" => {
-                Ok(CtreeOpType::Hit {
-                    target: target.to_string(),
-                    key: key_value.to_string(),
-                })
-            }
-            "scan" => {
-                Ok(CtreeOpType::Scan {
-                    target: target.to_string(),
-                })
-            }
+            "remove" => Ok(CtreeOpType::Remove {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "get" => Ok(CtreeOpType::Get {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "hit" => Ok(CtreeOpType::Hit {
+                target: target.to_string(),
+                key: key_value.to_string(),
+            }),
+            "scan" => Ok(CtreeOpType::Scan {
+                target: target.to_string(),
+            }),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -153,17 +158,26 @@ impl TryFrom<&[u8]> for RequestToken {
     }
 }
 
-pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>) -> Result<String, String> {
+pub async fn process_token(
+    token: RequestToken,
+    platform: &Arc<RwLock<Platform>>,
+) -> Result<String, String> {
     println!("Processing token: {:?}", token);
     match token {
-        RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(DataStructureType::Ctree { name })) => {
+        RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(
+            DataStructureType::Ctree { name },
+        )) => {
             println!("Creating ctree");
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
-            data_structures_lock.insert_ctree(CharTree::new(name.clone())).await;
+            data_structures_lock
+                .insert_ctree(CharTree::new(name.clone()))
+                .await;
             Ok(format!("Ctree {} created", name))
         }
-        RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(DataStructureType::Ctree { name })) => {
+        RequestToken::PlatformRwOp(PlatformRwOpType::DestroyStructure(
+            DataStructureType::Ctree { name },
+        )) => {
             println!("Removing ctree");
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
@@ -244,8 +258,6 @@ pub async fn process_token(token: RequestToken, platform: &Arc<RwLock<Platform>>
         _ => Err("Invalid request".to_string()),
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
