@@ -15,6 +15,8 @@
 //! ```
 //!
 
+use log::{info, warn};
+
 #[derive(Debug)]
 struct Node {
     name: char,
@@ -24,7 +26,7 @@ struct Node {
 
 impl Node {
     fn new(name: char) -> Self {
-        println!("creating new node: {}", &name);
+        info!("Creating new node with name: {}", name);
         Node {
             name: name,
             value: None,
@@ -52,6 +54,7 @@ pub struct CharTree {
 
 impl CharTree {
     pub fn new(name: String) -> Self {
+        info!("Creating new tree with name: {}", name);
         CharTree {
             root: Vec::new(),
             name: name,
@@ -72,9 +75,10 @@ impl CharTree {
     /// Inserts given valia to a given path.
     pub fn insert(&mut self, mut path: &str, value: &str) {
         if path.is_empty() {
+            warn!("Empty path provided, skipping insert");
             return;
         }
-        println!("inserting to the path: {}", path);
+        info!("Inserting value: {} to path: {}", value, path);
         let first_char = Self::consume_path(&mut path);
         if self.root.is_empty() {
             let new_node = Box::new(Node::new(first_char));
@@ -92,7 +96,7 @@ impl CharTree {
         }
     }
 
-    fn insert_recursive(mut path: &str, value: &str, mut current_node: &mut Box<Node>) {
+    fn insert_recursive(mut path: &str, value: &str, current_node: &mut Box<Node>) {
         if path.is_empty() {
             current_node.value = Some(value.to_string());
             return;
@@ -109,8 +113,10 @@ impl CharTree {
     /// This method gets a value from a given path.
     pub fn get(&self, mut path: &str) -> Option<String> {
         if self.root.is_empty() || path.is_empty() {
+            warn!("Empty path provided, skipping get");
             return None;
         }
+        info!("Getting value from path: {}", path);
         let first_char = Self::consume_path(&mut path);
         let mut current_node = self.root.iter().find(|&n| n.name == first_char)?;
         while !path.is_empty() {
@@ -127,8 +133,10 @@ impl CharTree {
     /// Like get(), but returns last value early if needed.
     pub fn hit(&self, mut path: &str) -> Option<String> {
         if self.root.is_empty() || path.is_empty() {
+            warn!("Empty path provided, skipping hit");
             return None;
         }
+        info!("Hitting value from path: {}", path);
         let first_char = Self::consume_path(&mut path);
         let mut current_node = self.root.iter().find(|&n| n.name == first_char)?;
         let mut last_value = &current_node.value;
@@ -152,8 +160,10 @@ impl CharTree {
     /// This a legacy shallow delete method, use deep_delete() instead.
     pub fn shallow_delete(&mut self, mut path: &str) {
         if self.root.is_empty() || path.is_empty() {
+            warn!("Empty path provided, skipping shallow delete");
             return;
         }
+        info!("Shallow deleting value from path: {}", path);
         let first_char = Self::consume_path(&mut path);
         let mut current_node = match self.root.iter_mut().find(|n| n.name == first_char) {
             Some(node) => node,
@@ -176,8 +186,10 @@ impl CharTree {
     /// This is the main method for deletions. It deletes not just values, but not used nodes as well.
     pub fn deep_delete(&mut self, mut path: &str) {
         if path.is_empty() {
+            warn!("Empty path provided, skipping deep delete");
             return;
         }
+        info!("Deep deleting value from path: {}", path);
         // Start deletion from the root nodes
         let first_char = Self::consume_path(&mut path);
         if let Some(node) = self.root.iter_mut().find(|n| n.name == first_char) {
@@ -211,6 +223,7 @@ impl CharTree {
 
     /// This function returns all possible keys and all possible values inserted.
     pub fn scan<'a>(&'a self) -> Vec<(String, &'a String)> {
+        info!("Scanning tree {}", &self.name);
         let mut result: Vec<(String, &'a String)> = Vec::new();
         for node in self.root.iter() {
             Self::scan_recursive(node, String::new(), &mut result);
