@@ -3,6 +3,7 @@ mod request_token;
 
 use std::sync::Arc;
 
+use log::{debug, error, log_enabled, info, Level};
 use tokio::io::{AsyncReadExt, AsyncWriteExt}; 
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
@@ -12,6 +13,7 @@ use request_token::{RequestToken, process_token};
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
+    env_logger::init();
     let platform = Arc::new(RwLock::new(platform::Platform::new()));
     run_server(platform).await
 }
@@ -20,13 +22,13 @@ async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Res
     const HOST: &str = "127.0.0.1";
     const PORT: &str = "42069";
     let listener = TcpListener::bind(format!("{}:{}", HOST, PORT)).await?;
-    println!("Server listening on {}:{}", HOST, PORT);
+    info!("Server listening on {}:{}", HOST, PORT);
 
     loop {
         let (socket, _) = match listener.accept().await {
             Ok(result) => result,
             Err(e) => {
-                eprintln!("Error accepting connection: {:?}", e);
+                error!("Failed to accept connection: {}", e);
                 continue;
             }
         };
@@ -35,7 +37,7 @@ async fn run_server(platform: Arc<RwLock<platform::Platform>>) -> tokio::io::Res
 
         tokio::spawn(async move {
             if let Err(e) = handle_connection(socket, platform_ref).await {
-                eprintln!("Error handling connection: {:?}", e);
+                error!("Failed to handle connection: {}", e);
             }        
         });
     }
@@ -59,20 +61,20 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, platform: Arc<RwLo
                 continue;
             }
         };
+        info!("Received request: {:?}", request_token);
         match process_token(request_token, &platform).await {
             Ok(response) => {
-                println!("Response: {}", &response);
                 match socket.write_all(response.as_bytes()).await {
                     Ok(_) => {
                         if let Err(e) = socket.write_all(b"\n\n").await {
-                            eprintln!("Failed to write delimiter: {}", e);
+                            error!("Failed to write response: {}", e);
                         }
                         if let Err(e) = socket.flush().await {
-                            eprintln!("Failed to flush the socket: {}", e);
+                            error!("Failed to flush socket: {}", e);
                         }
                     }
                     Err(e) => {
-                        eprintln!("Failed to write response: {}", e);
+                        error!("Failed to write response: {}", e);
                     }
                 }
             }
