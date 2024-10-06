@@ -84,12 +84,12 @@ impl TryFrom<String> for CtreeOpType {
             None => return Err(RequestParserError::InvalidRequest),
         };
         let (operation, key_value) = match leftover.split_once(" ") {
-            Some(result) => result,
+            Some((op, kv)) => (op, Some(kv)),
             None => return Err(RequestParserError::InvalidRequest),
         };
-        println!("Operation: {}, key_value: {}", operation, key_value);
         match operation {
             "insert" => {
+                let key_value = key_value.ok_or(RequestParserError::InvalidRequest)?;
                 let (key, value) = match key_value.split_once(" ") {
                     Some(result) => result,
                     None => return Err(RequestParserError::InvalidRequest),
@@ -102,15 +102,15 @@ impl TryFrom<String> for CtreeOpType {
             }
             "remove" => Ok(CtreeOpType::Remove {
                 target: target.to_string(),
-                key: key_value.to_string(),
+                key: key_value.ok_or(RequestParserError::InvalidRequest)?.to_string(),
             }),
             "get" => Ok(CtreeOpType::Get {
                 target: target.to_string(),
-                key: key_value.to_string(),
+                key: key_value.ok_or(RequestParserError::InvalidRequest)?.to_string(),
             }),
             "hit" => Ok(CtreeOpType::Hit {
                 target: target.to_string(),
-                key: key_value.to_string(),
+                key: key_value.ok_or(RequestParserError::InvalidRequest)?.to_string(),
             }),
             "scan" => Ok(CtreeOpType::Scan {
                 target: target.to_string(),
