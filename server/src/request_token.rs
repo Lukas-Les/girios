@@ -6,6 +6,11 @@ use tokio::sync::RwLock;
 
 use crate::platform::Platform;
 
+fn split_once_or_err<'a>(input: &'a str, delimiter: &'a str) -> Result<(&'a str, &'a str), RequestParserError> {
+    input.split_once(delimiter).ok_or(RequestParserError::InvalidRequest)
+}
+
+
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
     InvalidRequest,
@@ -26,10 +31,7 @@ pub enum DataStructureType {
 impl TryFrom<String> for DataStructureType {
     type Error = RequestParserError;
     fn try_from(value: String) -> Result<Self, RequestParserError> {
-        let (structure_type, structure_name) = match value.split_once(" ") {
-            Some(result) => result,
-            None => return Err(RequestParserError::InvalidRequest),
-        };
+        let (structure_type, structure_name) = split_once_or_err(&value, " ")?;
         match structure_type {
             "ctree" => Ok(DataStructureType::Ctree {
                 name: structure_name.to_string(),
@@ -78,47 +80,44 @@ impl TryFrom<String> for CtreeOpType {
             debug!("CtreeOpType from string: empty");
             return Err(RequestParserError::InvalidRequest);
         }
+        
         debug!("CtreeOpType from string: {}EOL", &value);
-        let (target, leftover) = match value.split_once(" ") {
-            Some(result) => result,
-            None => return Err(RequestParserError::InvalidRequest),
-        };
-        let (operation, key_value) = match leftover.split_once(" ") {
-            Some(result) => result,
-            None => return Err(RequestParserError::InvalidRequest),
-        };
-        println!("Operation: {}, key_value: {}", operation, key_value);
+
+        let (target, leftover) = split_once_or_err(&value, " ")?;
+
+        if leftover == "scan" {
+            return Ok(CtreeOpType::Scan {
+                target: target.to_owned(),
+            });
+        }
+
+        let (operation, key_value) = split_once_or_err(leftover, " ")?;
         match operation {
             "insert" => {
-                let (key, value) = match key_value.split_once(" ") {
-                    Some(result) => result,
-                    None => return Err(RequestParserError::InvalidRequest),
-                };
+                let (key, value) = split_once_or_err(key_value, " ")?;
                 Ok(CtreeOpType::Insert {
-                    target: target.to_string(),
-                    key: key.to_string(),
-                    value: value.to_string(),
+                    target: target.to_owned(),
+                    key: key.to_owned(),
+                    value: value.to_owned(),
                 })
             }
             "remove" => Ok(CtreeOpType::Remove {
-                target: target.to_string(),
-                key: key_value.to_string(),
+                target: target.to_owned(),
+                key: key_value.to_owned(),
             }),
             "get" => Ok(CtreeOpType::Get {
-                target: target.to_string(),
-                key: key_value.to_string(),
+                target: target.to_owned(),
+                key: key_value.to_owned(),
             }),
             "hit" => Ok(CtreeOpType::Hit {
-                target: target.to_string(),
-                key: key_value.to_string(),
-            }),
-            "scan" => Ok(CtreeOpType::Scan {
-                target: target.to_string(),
+                target: target.to_owned(),
+                key: key_value.to_owned(),
             }),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
 }
+
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -128,10 +127,7 @@ pub enum RequestToken {
 impl RequestToken {
     fn from_string(value: String) -> Result<Self, RequestParserError> {
         debug!("Received input: {}", value);
-        let (root_command, leftover_str) = match value.split_once(" ") {
-            Some(result) => result,
-            None => return Err(RequestParserError::InvalidRequest),
-        };
+        let (root_command, leftover_str) = split_once_or_err(&value, " ")?;
         let leftover = leftover_str.to_string();
         match root_command {
             "create" => Ok(RequestToken::PlatformRwOp(
