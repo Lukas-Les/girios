@@ -5,7 +5,7 @@ Girios is a tree based database, which I'm writing for learning purposes
 
 To run girios daemon:
 ```
-cargo run --bin open-server
+cargo run --bin server
 ```
 
 And to use it:
@@ -17,7 +17,7 @@ telnet localhost 42069
 Second, you can interact with daemon through a client.
 To run client:
 ```
-cargo bin --open-client
+cargo bin --cli-client
 ```
 
 
@@ -29,20 +29,27 @@ cargo docs --no-deps --open
 
 ## How to use
 
-available methods:
+Common commands
 ```
-insert <path> <value>
-get <path>
-hit <path>
-delete <path>
-scan
+create <structure type> <name>
+destroy <structure type> <name>
+```
+
+Ctree commands
+```
+ctree <name> insert <key> <value>
+ctree <name> get <key>
+ctree <name> hit <key>
+ctree <name> delete <key>
+ctree <name> scan
 ```
 
 e.g.
 ```
-insert foo bar
+create ctree my_tree
+ctree my_tree insert foo bar
 ```
-will insert value bar into path foo
+will create char tree named my_tree and insert value bar into path foo
 
 
 ## [Roadmap](https://docs.google.com/spreadsheets/d/1rAe194TiP8Uh3TWq-6t2CMmyK_q8IUbezFoHdePunWQ/edit?usp=sharing)
