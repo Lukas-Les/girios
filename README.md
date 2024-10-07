@@ -17,7 +17,7 @@ telnet localhost 42069
 Second, you can interact with daemon through a client.
 To run client:
 ```
-cargo bin --cli-client
+cargo --bin cli-client
 ```
 
 
