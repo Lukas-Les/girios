@@ -6,6 +6,7 @@ use tokio::sync::RwLock;
 
 use crate::platform::Platform;
 
+
 fn split_once_or_err<'a>(input: &'a str, delimiter: &'a str) -> Result<(&'a str, &'a str), RequestParserError> {
     input.split_once(delimiter).ok_or(RequestParserError::InvalidRequest)
 }
@@ -49,6 +50,28 @@ pub enum PlatformRwOpType {
 }
 
 #[derive(Debug)]
+pub enum ListableType {
+    Ctrees,
+}
+
+impl TryFrom<String> for ListableType {
+    type Error = RequestParserError;
+
+    fn try_from(value: String) -> Result<Self, RequestParserError> {
+        match value.as_str() {
+            "ctrees" => Ok(ListableType::Ctrees),
+            _ => Err(RequestParserError::InvalidRequest),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum PlatformReadOpType {
+    ListStructures(ListableType),
+}
+
+
+#[derive(Debug)]
 pub enum CtreeOpType {
     Insert {
         target: String,
@@ -80,7 +103,7 @@ impl TryFrom<String> for CtreeOpType {
             debug!("CtreeOpType from string: empty");
             return Err(RequestParserError::InvalidRequest);
         }
-        
+
         debug!("CtreeOpType from string: {}EOL", &value);
 
         let (target, leftover) = split_once_or_err(&value, " ")?;
@@ -122,6 +145,7 @@ impl TryFrom<String> for CtreeOpType {
 #[derive(Debug)]
 pub enum RequestToken {
     PlatformRwOp(PlatformRwOpType),
+    PlatformReadOp(PlatformReadOpType),
     CtreeOp(CtreeOpType),
 }
 impl RequestToken {
@@ -135,6 +159,9 @@ impl RequestToken {
             )),
             "destroy" => Ok(RequestToken::PlatformRwOp(
                 PlatformRwOpType::DestroyStructure(DataStructureType::try_from(leftover)?),
+            )),
+            "list" => Ok(RequestToken::PlatformReadOp(
+                PlatformReadOpType::ListStructures(ListableType::try_from(leftover)?),
             )),
             "ctree" => Ok(RequestToken::CtreeOp(CtreeOpType::try_from(leftover)?)),
             _ => Err(RequestParserError::InvalidRequest),
