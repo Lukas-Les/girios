@@ -50,4 +50,9 @@ impl DataStructures {
         let ctrees = self.ctrees.read().await; // Lock the HashMap for reading
         ctrees.get(name).cloned() // Clone the Arc to return a reference
     }
+
+    pub async fn get_all_ctrees(&self) -> Vec<Arc<RwLock<CharTree>>> {
+        let ctrees = self.ctrees.read().await;
+        ctrees.values().cloned().collect()
+    }
 }

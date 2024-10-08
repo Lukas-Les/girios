@@ -277,6 +277,12 @@ pub async fn process_token(
             let keys = ctree_read.scan();
             Ok(format!("{:?}", keys))
         }
+        RequestToken::PlatformReadOp(PlatformReadOpType::ListStructures(ListableType::Ctrees)) => {
+            let platforn_lock = platform.read().await;
+            let data_structures_lock = platforn_lock.data_structures.read().await;
+            let ctrees = data_structures_lock.get_all_ctrees().await;
+            Ok(format!("{:?}", ctrees))
+        }
 
         _ => Err("Invalid request".to_string()),
     }
