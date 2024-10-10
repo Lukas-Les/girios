@@ -38,7 +38,6 @@ fn main() -> io::Result<()> {
     println!("\tctree <name> insert <key> <value>");
     println!("\tctree <name> scan");
     println!(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    
 
     // Connect to the server
     let mut stream = TcpStream::connect(&cfg.host)?;

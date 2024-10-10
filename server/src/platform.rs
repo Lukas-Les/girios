@@ -5,7 +5,6 @@ use tokio::sync::RwLock;
 
 use common::dsa::char_tree::CharTree;
 
-
 #[derive(Debug)]
 pub struct Platform {
     pub data_structures: Arc<RwLock<DataStructures>>,

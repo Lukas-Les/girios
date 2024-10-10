@@ -6,11 +6,14 @@ use tokio::sync::RwLock;
 
 use crate::platform::Platform;
 
-
-fn split_once_or_err<'a>(input: &'a str, delimiter: &'a str) -> Result<(&'a str, &'a str), RequestParserError> {
-    input.split_once(delimiter).ok_or(RequestParserError::InvalidRequest)
+fn split_once_or_err<'a>(
+    input: &'a str,
+    delimiter: &'a str,
+) -> Result<(&'a str, &'a str), RequestParserError> {
+    input
+        .split_once(delimiter)
+        .ok_or(RequestParserError::InvalidRequest)
 }
-
 
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
@@ -46,7 +49,6 @@ impl TryFrom<String> for DataStructureType {
 pub enum PlatformRwOpType {
     CreateStructure(DataStructureType),
     DestroyStructure(DataStructureType),
-    Invalid,
 }
 
 #[derive(Debug)]
@@ -69,7 +71,6 @@ impl TryFrom<String> for ListableType {
 pub enum PlatformReadOpType {
     ListStructures(ListableType),
 }
-
 
 #[derive(Debug)]
 pub enum CtreeOpType {
@@ -140,7 +141,6 @@ impl TryFrom<String> for CtreeOpType {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum RequestToken {
@@ -215,7 +215,7 @@ pub async fn process_token(
         RequestToken::CtreeOp(CtreeOpType::Insert { target, key, value }) => {
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
-            let mut ctree = data_structures_lock.get_ctree(&target).await;
+            let ctree = data_structures_lock.get_ctree(&target).await;
             if ctree.is_none() {
                 return Err("Ctree not found".to_string());
             }
@@ -227,7 +227,7 @@ pub async fn process_token(
         RequestToken::CtreeOp(CtreeOpType::Remove { target, key }) => {
             let platforn_lock = platform.write().await;
             let data_structures_lock = platforn_lock.data_structures.write().await;
-            let mut ctree = match data_structures_lock.get_ctree(&target).await {
+            let ctree = match data_structures_lock.get_ctree(&target).await {
                 Some(ctree) => ctree,
                 None => return Err("Ctree not found".to_string()),
             };

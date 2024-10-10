@@ -53,12 +53,12 @@ async fn handle_connection(
             Ok(0) => {
                 info!("Connection closed by client.");
                 return Ok(()); // Connection closed gracefully
-            },
+            }
             Ok(n) => n,
             Err(e) => {
                 error!("Failed to read from socket: {}", e);
                 return Err(e);
-            },
+            }
         };
 
         // Attempt to parse the request
