@@ -8,7 +8,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
-use request_token::{process_token, RequestToken};
+use request_token::RequestToken;
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
@@ -71,7 +71,7 @@ async fn handle_connection(
             }
         };
         debug!("Parsed operation: {:?}", request_token);
-        match process_token(request_token, &platform).await {
+        match request_token.execute(&platform).await {
             Ok(response) => {
                 if let Err(e) = socket.write_all(response.as_bytes()).await {
                     error!("Failed to write response: {}", e);
