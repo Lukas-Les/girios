@@ -17,6 +17,14 @@ impl Platform {
             data_structures: Arc::new(RwLock::new(DataStructures::new())),
         }
     }
+
+    pub async fn r_lock_data_structures<'a>(&self) -> tokio::sync::RwLockReadGuard<DataStructures> {
+        self.data_structures.read().await
+    }
+
+    pub async fn rw_lock_data_structures(&self) -> tokio::sync::RwLockWriteGuard<DataStructures> {
+        self.data_structures.write().await
+    }
 }
 
 #[derive(Debug)]

@@ -15,6 +15,8 @@ fn split_once_or_err<'a>(
         .ok_or(RequestParserError::InvalidRequest)
 }
 
+
+
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
     InvalidRequest,
@@ -51,26 +53,6 @@ pub enum PlatformRwOpType {
     DestroyStructure(DataStructureType),
 }
 
-#[derive(Debug)]
-pub enum ListableType {
-    Ctrees,
-}
-
-impl TryFrom<String> for ListableType {
-    type Error = RequestParserError;
-
-    fn try_from(value: String) -> Result<Self, RequestParserError> {
-        match value.as_str() {
-            "ctrees" => Ok(ListableType::Ctrees),
-            _ => Err(RequestParserError::InvalidRequest),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum PlatformReadOpType {
-    ListStructures(ListableType),
-}
 
 #[derive(Debug)]
 pub enum CtreeOpType {
@@ -94,6 +76,7 @@ pub enum CtreeOpType {
     Scan {
         target: String,
     },
+    List,
 }
 
 impl TryFrom<String> for CtreeOpType {
@@ -105,7 +88,11 @@ impl TryFrom<String> for CtreeOpType {
             return Err(RequestParserError::InvalidRequest);
         }
 
-        debug!("CtreeOpType from string: {}EOL", &value);
+        debug!("CtreeOpType from string: {}", &value);
+
+        if value == "list" {
+            return Ok(CtreeOpType::List);
+        }
 
         let (target, leftover) = split_once_or_err(&value, " ")?;
 
@@ -145,7 +132,6 @@ impl TryFrom<String> for CtreeOpType {
 #[derive(Debug)]
 pub enum RequestToken {
     PlatformRwOp(PlatformRwOpType),
-    PlatformReadOp(PlatformReadOpType),
     CtreeOp(CtreeOpType),
 }
 impl RequestToken {
@@ -160,16 +146,13 @@ impl RequestToken {
             "destroy" => Ok(RequestToken::PlatformRwOp(
                 PlatformRwOpType::DestroyStructure(DataStructureType::try_from(leftover)?),
             )),
-            "list" => Ok(RequestToken::PlatformReadOp(
-                PlatformReadOpType::ListStructures(ListableType::try_from(leftover)?),
-            )),
             "ctree" => Ok(RequestToken::CtreeOp(CtreeOpType::try_from(leftover)?)),
             _ => Err(RequestParserError::InvalidRequest),
         }
     }
 
     pub async fn execute(&self, platform: &Arc<RwLock<Platform>>) -> Result<String, String> {
-        println!("Processing token: {:?}", &self);
+        debug!("Executing request: {:?}", self);
         match self {
             //create <structure type> < structure name>
             RequestToken::PlatformRwOp(PlatformRwOpType::CreateStructure(
@@ -261,16 +244,13 @@ impl RequestToken {
                 let keys = ctree_read.scan();
                 Ok(format!("{:?}", keys))
             }
-            // list ctrees
-            RequestToken::PlatformReadOp(PlatformReadOpType::ListStructures(
-                ListableType::Ctrees,
-            )) => {
+            // ctree list
+            RequestToken::CtreeOp(CtreeOpType::List) => {
                 let platforn_lock = platform.read().await;
                 let data_structures_lock = platforn_lock.data_structures.read().await;
                 let ctrees = data_structures_lock.get_all_ctrees().await;
                 Ok(format!("{:?}", ctrees))
             }
-
             _ => Err("Invalid request".to_string()),
         }
     }
