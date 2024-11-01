@@ -1,9 +1,9 @@
 //! This module provides a Char Tree - structure, that lets you to store and retrieve a given value to a given path.
 //! Example:
 //! ```
-//! use common::dsa::char_tree::Tree;
+//! use common::dsa::char_tree::CharTree;
 //!
-//! let mut tree = Tree::new("tree_name".to_string());
+//! let mut tree = CharTree::new("tree_name".to_string());
 //! tree.insert("mypath", "somevalue");
 //! let result = tree.get("mypath").unwrap();
 //! let other_result = tree.hit("mypathbutlonger").unwrap();
