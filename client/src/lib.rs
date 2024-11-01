@@ -50,14 +50,3 @@ impl Client {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_client() {
-        let client = Client::new("127.0.0.1", 42069);
-        let result = client.insert("wau", "audi");
-        dbg!(result.unwrap());
-    }
-}
