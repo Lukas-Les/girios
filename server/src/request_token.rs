@@ -15,8 +15,6 @@ fn split_once_or_err<'a>(
         .ok_or(RequestParserError::InvalidRequest)
 }
 
-
-
 #[derive(PartialEq, Debug)]
 pub enum RequestParserError {
     InvalidRequest,
@@ -52,7 +50,6 @@ pub enum PlatformRwOpType {
     CreateStructure(DataStructureType),
     DestroyStructure(DataStructureType),
 }
-
 
 #[derive(Debug)]
 pub enum CtreeOpType {
